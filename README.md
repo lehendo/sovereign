@@ -10,6 +10,17 @@ A high-performance, local-only screen recording and search system built as an al
 
 All processing happens locally on your device. No cloud, no telemetry, complete control.
 
+## Security Warning
+
+**IMPORTANT: This software captures ALL visible content on your screen, including sensitive information.**
+
+- Screenshots are stored UNENCRYPTED on your local disk
+- No privacy filters or blacklisting (yet - planned for Phase 6)
+- Anyone with access to your computer can view screenshots
+- Use at your own risk
+
+See [SECURITY.md](SECURITY.md) for detailed security considerations before using this software.
+
 ## Tech Stack
 
 - **Backend**: Rust with Tauri v2
