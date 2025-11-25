@@ -11,9 +11,16 @@ fn main() {
             
             // Spawn the screen recorder task
             tauri::async_runtime::spawn(async move {
-                let recorder = ScreenRecorder::new(app_handle);
-                println!("Starting screen capture loop...");
-                recorder.start_capture_loop().await;
+                match ScreenRecorder::new(app_handle) {
+                    Ok(recorder) => {
+                        println!("Starting screen capture loop with OCR and embeddings...");
+                        recorder.start_capture_loop().await;
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to initialize ScreenRecorder: {:#}", e);
+                        eprintln!("Make sure Tesseract is installed on your system");
+                    }
+                }
             });
 
             Ok(())

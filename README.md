@@ -28,75 +28,118 @@ See [SECURITY.md](SECURITY.md) for detailed security considerations before using
 - **Database**: SQLite (with vector search planned)
 - **Screen Capture**: xcap
 - **Image Processing**: WebP compression
-- **OCR**: rusty-tesseract (Phase 2)
-- **AI Embeddings**: fastembed-rs (Phase 2)
+- **OCR**: rusty-tesseract
+- **AI Embeddings**: fastembed-rs
 
-## Phase 1: Core Loop
+## Features
 
-**Status**: Complete
-
-### Features Implemented
+### Phase 1: Core Loop (Complete)
 
 - Screen capture every 2 seconds
 - Smart deduplication using perceptual hashing
 - Automatic 1080p resizing for 4K displays
 - High-compression WebP storage
-- Tauri's AppData directory for cross-platform compatibility
+- Cross-platform path handling with Tauri's AppData
 - Automatic startup on app launch
 - Clean React UI with status indicator
+
+### Phase 2: OCR & Embeddings (Complete)
+
+- OCR text extraction using Tesseract
+- Image preprocessing for optimal recognition
+- Fastembed integration for 384-dimensional vectors (completely offline)
+- Full pipeline: Capture → Resize → OCR → Embedding
+- Graceful degradation if embedding model unavailable (app continues with OCR only)
+
+**Embedding Model Setup**: The app loads embedding models completely offline from cache. To enable embeddings, manually download the model files once (see Installation section below).
 
 ### How It Works
 
 1. **Capture**: The app monitors your primary display every 2 seconds
 2. **Smart Check**: Calculates a perceptual hash of the screen
 3. **Deduplication**: Only saves screenshots when the screen has changed
-4. **Compression**: Saves as .webp (85% quality) to minimize storage
-5. **Resize**: Automatically resizes 4K screenshots to 1080p
+4. **OCR**: Extracts text from the image using Tesseract
+5. **Embedding**: Generates semantic vectors for search (when model available)
+6. **Storage**: Saves as .webp (85% quality) to minimize disk usage
 
-## Project Structure
-
-```
-sovereign/
-├── src/                      # React frontend
-│   ├── App.tsx              # Main UI component
-│   ├── main.tsx             # React entry point
-│   └── index.css            # Tailwind styles
-├── src-tauri/
-│   ├── src/
-│   │   ├── main.rs          # Tauri app + auto-start logic
-│   │   ├── recorder.rs      # Core capture module
-│   │   └── lib.rs           # Module declarations
-│   ├── Cargo.toml           # Rust dependencies
-│   └── tauri.conf.json      # Tauri configuration
-└── package.json             # Frontend dependencies
-```
-
-## Development
+## Installation
 
 ### Prerequisites
 
+**1. Node.js and Rust**
 - Node.js 18+
 - Rust 1.70+
 - Xcode Command Line Tools (macOS)
 
-### Run Development Server
+**2. Tesseract OCR**
 
+Required for text extraction.
+
+#### macOS
 ```bash
-npm install
-npm run tauri dev
+brew install tesseract
 ```
 
-The app will:
-- Start Vite dev server on http://localhost:1420
-- Launch the Tauri window
-- Begin capturing screenshots automatically
-- Save to: `~/Library/Application Support/com.sovereign.app/screenshots/`
+#### Windows
+Download from: https://github.com/UB-Mannheim/tesseract/wiki
+
+Add Tesseract to your PATH.
+
+#### Linux (Ubuntu/Debian)
+```bash
+sudo apt-get update
+sudo apt-get install tesseract-ocr
+```
+
+#### Verify Installation
+```bash
+tesseract --version
+```
+
+You should see version 4.0 or higher.
+
+### Setup
+
+1. Clone the repository:
+```bash
+git clone https://github.com/lehendo/sovereign.git
+cd sovereign
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. (Optional) Download embedding model for semantic search:
+
+```bash
+# Create cache directory
+mkdir -p ~/.cache/huggingface/hub/models--Qdrant--all-MiniLM-L6-v2-onnx/snapshots/main
+cd ~/.cache/huggingface/hub/models--Qdrant--all-MiniLM-L6-v2-onnx/snapshots/main
+
+# Download model files (90MB total)
+curl -L -o model.onnx "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/model.onnx?download=true"
+curl -L -o tokenizer.json "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/tokenizer.json?download=true"
+curl -L -o config.json "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/config.json?download=true"
+curl -L -o special_tokens_map.json "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/special_tokens_map.json?download=true"
+curl -L -o tokenizer_config.json "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/tokenizer_config.json?download=true"
+```
+
+**Note**: The app works perfectly without embeddings (OCR only). Embeddings enable future semantic search features.
+
+4. Run development server:
+```bash
+npm run tauri dev
+```
 
 ### Build for Production
 
 ```bash
 npm run tauri build
 ```
+
+The compiled application will be in `src-tauri/target/release/`.
 
 ## Storage
 
@@ -106,16 +149,33 @@ Screenshots are saved to the platform-specific app data directory:
 - **Windows**: `%APPDATA%\com.sovereign.app\screenshots\`
 - **Linux**: `~/.local/share/com.sovereign.app/screenshots/`
 
+## Troubleshooting
+
+### "Tesseract not found"
+- Make sure Tesseract is installed and in your PATH
+- On Windows, you may need to set `TESSDATA_PREFIX` environment variable
+
+### "Model cache not found"
+- The app works perfectly with OCR only
+- To enable embeddings, follow the manual download instructions above
+- Model files are loaded completely offline (no network requests)
+- Total download size: ~90MB (one-time)
+
+### High CPU usage
+- Normal during OCR processing (CPU-intensive by design)
+- Consider increasing capture interval if needed
+
+### OCR returns wrong text
+- OCR accuracy depends on screen content quality
+- Works best with clear, high-contrast text
+- Small/blurry text may not be recognized accurately
+
 ## Roadmap
 
-### Phase 2: The Brain (OCR & Embeddings)
-- [ ] Integrate rusty-tesseract for OCR
-- [ ] Integrate fastembed-rs for semantic embeddings
-- [ ] Pipeline: Capture → OCR → Generate Embedding
-
 ### Phase 3: The Memory (Database)
-- [ ] SQLite schema implementation
-- [ ] Data persistence
+- [ ] SQLite schema implementation with vector support
+- [ ] Store OCR text and embeddings
+- [ ] Data persistence layer
 - [ ] Encryption at rest
 
 ### Phase 4: The Recall (Search Logic)
@@ -134,7 +194,24 @@ Screenshots are saved to the platform-specific app data directory:
 - [ ] Configurable retention policy
 - [ ] Auto-delete old data
 
+## Project Structure
+
+```
+sovereign/
+├── src/                      # React frontend
+│   ├── App.tsx              # Main UI component
+│   ├── main.tsx             # React entry point
+│   └── index.css            # Tailwind styles
+├── src-tauri/
+│   ├── src/
+│   │   ├── main.rs          # Tauri app + auto-start logic
+│   │   ├── recorder.rs      # Core capture + OCR + embeddings
+│   │   └── lib.rs           # Module declarations
+│   ├── Cargo.toml           # Rust dependencies
+│   └── tauri.conf.json      # Tauri configuration
+└── package.json             # Frontend dependencies
+```
+
 ## License
 
 MIT
-
