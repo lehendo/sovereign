@@ -1,0 +1,29 @@
+[package]
+name = "sovereign"
+version = "0.1.0"
+description = "Privacy-first screen memory tool"
+authors = ["you"]
+edition = "2021"
+
+[lib]
+name = "sovereign_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.0.0", features = [] }
+
+[dependencies]
+tauri = { version = "2.0.0", features = [] }
+tauri-plugin-shell = "2.0.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+xcap = "0.0.12"
+image = "0.25"
+webp = "0.3"
+image_hasher = "2.0"
+anyhow = "1.0"
+
+[target."cfg(not(any(target_os = \"android\", target_os = \"ios\")))".dependencies]
+tauri-plugin-shell = "2.0.0"
+
