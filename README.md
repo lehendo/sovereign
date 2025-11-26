@@ -113,6 +113,10 @@ npm install
 
 3. (Optional) Download embedding model for semantic search:
 
+**Note**: The app works perfectly without embeddings (OCR only). Embeddings enable future semantic search features (Phase 4).
+
+#### Linux / macOS
+
 ```bash
 # Create cache directory
 mkdir -p ~/.cache/huggingface/hub/models--Qdrant--all-MiniLM-L6-v2-onnx/snapshots/main
@@ -126,7 +130,23 @@ curl -L -o special_tokens_map.json "https://huggingface.co/Qdrant/all-MiniLM-L6-
 curl -L -o tokenizer_config.json "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/tokenizer_config.json?download=true"
 ```
 
-**Note**: The app works perfectly without embeddings (OCR only). Embeddings enable future semantic search features.
+#### Windows (PowerShell)
+
+```powershell
+# The app looks in %LOCALAPPDATA% on Windows
+$cacheDir = "$env:LOCALAPPDATA\huggingface\hub\models--Qdrant--all-MiniLM-L6-v2-onnx\snapshots\main"
+New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
+Set-Location $cacheDir
+
+# Download model files (90MB total)
+Invoke-WebRequest -Uri "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/model.onnx?download=true" -OutFile "model.onnx"
+Invoke-WebRequest -Uri "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/tokenizer.json?download=true" -OutFile "tokenizer.json"
+Invoke-WebRequest -Uri "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/config.json?download=true" -OutFile "config.json"
+Invoke-WebRequest -Uri "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/special_tokens_map.json?download=true" -OutFile "special_tokens_map.json"
+Invoke-WebRequest -Uri "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/tokenizer_config.json?download=true" -OutFile "tokenizer_config.json"
+
+Write-Host "Model files downloaded to: $cacheDir"
+```
 
 4. Run development server:
 ```bash
@@ -146,7 +166,7 @@ The compiled application will be in `src-tauri/target/release/`.
 Screenshots are saved to the platform-specific app data directory:
 
 - **macOS**: `~/Library/Application Support/com.sovereign.app/screenshots/`
-- **Windows**: `%APPDATA%\com.sovereign.app\screenshots\`
+- **Windows**: `%APPDATA%\com.sovereign.app\screenshots\` (e.g., `C:\Users\YourName\AppData\Roaming\com.sovereign.app\screenshots\`)
 - **Linux**: `~/.local/share/com.sovereign.app/screenshots/`
 
 ## Troubleshooting

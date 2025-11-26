@@ -21,12 +21,14 @@ impl ScreenRecorder {
     fn load_embedding_model_offline() -> Result<Option<TextEmbedding>> {
         println!("Initializing embedding model from local cache...");
         
-        // Try multiple cache locations (Linux/macOS differences)
+        // Try multiple cache locations (cross-platform)
         let possible_cache_dirs = vec![
-            // Linux/Unix standard
-            dirs::home_dir().map(|h| h.join(".cache").join("huggingface")),
-            // macOS standard
+            // Windows: %LOCALAPPDATA%\huggingface (C:\Users\Name\AppData\Local\huggingface)
+            // macOS: ~/Library/Caches/huggingface
+            // Linux: ~/.cache/huggingface
             dirs::cache_dir().map(|c| c.join("huggingface")),
+            // Fallback for Linux if cache_dir doesn't work
+            dirs::home_dir().map(|h| h.join(".cache").join("huggingface")),
         ];
 
         let mut cache_dir = None;
@@ -48,10 +50,17 @@ impl ScreenRecorder {
             None => {
                 println!("Model cache not found in standard locations");
                 println!("Checked:");
-                println!("  - ~/.cache/huggingface/hub/models--Qdrant--all-MiniLM-L6-v2-onnx/snapshots/main");
-                println!("  - ~/Library/Caches/huggingface/hub/models--Qdrant--all-MiniLM-L6-v2-onnx/snapshots/main");
+                if cfg!(target_os = "windows") {
+                    println!("  - %LOCALAPPDATA%\\huggingface\\hub\\models--Qdrant--all-MiniLM-L6-v2-onnx\\snapshots\\main");
+                } else if cfg!(target_os = "macos") {
+                    println!("  - ~/Library/Caches/huggingface/hub/models--Qdrant--all-MiniLM-L6-v2-onnx/snapshots/main");
+                    println!("  - ~/.cache/huggingface/hub/models--Qdrant--all-MiniLM-L6-v2-onnx/snapshots/main");
+                } else {
+                    println!("  - ~/.cache/huggingface/hub/models--Qdrant--all-MiniLM-L6-v2-onnx/snapshots/main");
+                }
                 println!("To enable embeddings, manually download model files from:");
                 println!("https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx");
+                println!("See README.md for platform-specific instructions");
                 println!("Running in OCR-only mode");
                 return Ok(None);
             }
