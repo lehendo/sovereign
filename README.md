@@ -53,6 +53,16 @@ See [SECURITY.md](SECURITY.md) for detailed security considerations before using
 
 **Embedding Model Setup**: The app loads embedding models completely offline from cache. To enable embeddings, manually download the model files once (see Installation section below).
 
+### Phase 3: The Memory (Complete)
+
+- SQLite database with full schema implementation
+- Three tables: `frames`, `ocr_text`, `embeddings`
+- Automatic data persistence after each capture
+- Vector embeddings stored as binary blobs (bincode serialization)
+- Database location: `<app_data>/sovereign.db`
+- Startup statistics showing total stored data
+- Indexed for query performance
+
 ### How It Works
 
 1. **Capture**: The app monitors your primary display every 2 seconds
@@ -166,11 +176,24 @@ The compiled application will be in `src-tauri/target/release/`.
 
 ## Storage
 
+### Screenshots
 Screenshots are saved to the platform-specific app data directory:
 
 - **macOS**: `~/Library/Application Support/com.sovereign.app/screenshots/`
 - **Windows**: `%APPDATA%\com.sovereign.app\screenshots\` (e.g., `C:\Users\YourName\AppData\Roaming\com.sovereign.app\screenshots\`)
 - **Linux**: `~/.local/share/com.sovereign.app/screenshots/`
+
+### Database
+All metadata, OCR text, and embeddings are stored in SQLite:
+
+- **macOS**: `~/Library/Application Support/com.sovereign.app/sovereign.db`
+- **Windows**: `%APPDATA%\com.sovereign.app\sovereign.db`
+- **Linux**: `~/.local/share/com.sovereign.app/sovereign.db`
+
+The database contains:
+- `frames` table: Timestamps, image paths, perceptual hashes
+- `ocr_text` table: Extracted text from each frame
+- `embeddings` table: 384-dimensional vectors (serialized as binary blobs)
 
 ## Troubleshooting
 
@@ -202,12 +225,6 @@ Screenshots are saved to the platform-specific app data directory:
 
 
 ## Roadmap
-
-### Phase 3: The Memory (Database)
-- [ ] SQLite schema implementation with vector support
-- [ ] Store OCR text and embeddings
-- [ ] Data persistence layer
-- [ ] Encryption at rest
 
 ### Phase 4: The Recall (Search Logic)
 - [ ] Natural language search

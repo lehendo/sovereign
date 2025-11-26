@@ -9,10 +9,13 @@ use tauri::AppHandle;
 use tauri::Manager;
 use xcap::Monitor;
 
+use crate::database::Database;
+
 pub struct ScreenRecorder {
     last_hash: Option<ImageHash>,
     hasher: image_hasher::Hasher,
     embedding_model: Option<TextEmbedding>,
+    database: Database,
     app_handle: AppHandle,
 }
 
@@ -135,6 +138,15 @@ impl ScreenRecorder {
             .preproc_dct()
             .to_hasher();
 
+        // Initialize database
+        let db_path = app_handle
+            .path()
+            .app_data_dir()
+            .context("Failed to get app data directory")?
+            .join("sovereign.db");
+
+        let database = Database::new(db_path)?;
+
         // Load embedding model from cache (offline)
         let embedding_model = Self::load_embedding_model_offline()
             .unwrap_or_else(|e| {
@@ -147,6 +159,7 @@ impl ScreenRecorder {
             last_hash: None,
             hasher,
             embedding_model,
+            database,
             app_handle,
         })
     }
@@ -254,6 +267,9 @@ impl ScreenRecorder {
             }
         }
 
+        // Store hash string before moving
+        let hash_string = format!("{}", hash.to_base64());
+
         // Update last hash
         self.last_hash = Some(hash);
 
@@ -286,6 +302,17 @@ impl ScreenRecorder {
             filepath.display()
         );
 
+        // Phase 3: Insert frame into database
+        let frame_id = self.database.insert_frame(
+            timestamp,
+            filepath.to_str().unwrap_or(&filename),
+            &hash_string,
+            None, // app_name (TODO: Phase 6)
+            None, // window_title (TODO: Phase 6)
+        ).context("Failed to insert frame into database")?;
+
+        println!("✓ Frame saved to database (ID: {})", frame_id);
+
         // Phase 2: OCR and Embedding Generation
         println!("Performing OCR...");
         let ocr_text = match self.extract_text_from_image(&img) {
@@ -306,6 +333,15 @@ impl ScreenRecorder {
             }
         };
 
+        // Save OCR text to database
+        if !ocr_text.is_empty() {
+            if let Err(e) = self.database.insert_ocr_text(frame_id, &ocr_text) {
+                eprintln!("Failed to insert OCR text: {:#}", e);
+            } else {
+                println!("✓ OCR text saved to database");
+            }
+        }
+
         // Generate embedding
         if !ocr_text.is_empty() {
             if self.embedding_model.is_some() {
@@ -314,6 +350,13 @@ impl ScreenRecorder {
                     Ok(embedding) => {
                         println!("✓ Embedding vector length: {}", embedding.len());
                         println!("✓ First 5 dimensions: {:?}", &embedding[..5.min(embedding.len())]);
+                        
+                        // Save embedding to database
+                        if let Err(e) = self.database.insert_embedding(frame_id, &embedding) {
+                            eprintln!("Failed to insert embedding: {:#}", e);
+                        } else {
+                            println!("✓ Embedding saved to database");
+                        }
                     }
                     Err(e) => {
                         eprintln!("Embedding generation error: {:#}", e);
@@ -330,6 +373,15 @@ impl ScreenRecorder {
     /// Start the capture loop (captures every 2 seconds)
     pub async fn start_capture_loop(mut self) {
         let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(2));
+
+        // Print database stats on startup
+        if let Ok(stats) = self.database.get_stats() {
+            println!("=== Database Statistics ===");
+            println!("Total frames: {}", stats.total_frames);
+            println!("Total OCR entries: {}", stats.total_ocr_entries);
+            println!("Total embeddings: {}", stats.total_embeddings);
+            println!("===========================");
+        }
 
         loop {
             interval.tick().await;
