@@ -67,7 +67,7 @@ See [SECURITY.md](SECURITY.md) for detailed security considerations before using
 ### Prerequisites
 
 **1. Node.js and Rust**
-- Node.js 18+
+- Node.js 18-21 (if using Node 22+, you may need to update Vite)
 - Rust 1.70+
 - Xcode Command Line Tools (macOS)
 
@@ -171,6 +171,11 @@ Screenshots are saved to the platform-specific app data directory:
 
 ## Troubleshooting
 
+### Blank white window on startup
+- **Cause**: Node.js version incompatibility with Vite
+- **Solution**: Using Node.js 18-21. If on Node 22+, run `npm install vite@latest`
+- **Note**: Current configuration supports Node.js 21 and below
+
 ### "Tesseract not found"
 - Make sure Tesseract is installed and in your PATH
 - On Windows, you may need to set `TESSDATA_PREFIX` environment variable
@@ -189,6 +194,11 @@ Screenshots are saved to the platform-specific app data directory:
 - OCR accuracy depends on screen content quality
 - Works best with clear, high-contrast text
 - Small/blurry text may not be recognized accurately
+
+### npm audit warnings
+- esbuild vulnerability (GHSA-67mh-4wv8-2f99) only affects dev server
+- Does not impact production builds
+- Can be safely ignored for development
 
 ## Roadmap
 
