@@ -179,6 +179,9 @@ impl ScreenRecorder {
             "LastPass".to_string(),
             "InPrivate".to_string(), // Edge private mode
             "Private Browsing".to_string(), // Firefox/Safari
+            "Private Window".to_string(), // Safari
+            "New Incognito Window".to_string(), // Chrome
+            "Incognito Window".to_string(), // Chrome variant
         ];
 
         Ok(Self {
@@ -192,41 +195,127 @@ impl ScreenRecorder {
     }
 
     /// Check if the current window should be blocked by privacy guard
+    /// Uses native system commands for maximum stability
     fn check_privacy_guard(&self) -> bool {
-        // Wrap in catch_unwind to prevent crashes from native code panics
-        use std::panic;
+        let window_title = self.get_active_window_title();
         
-        let result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
-            match active_win_pos_rs::get_active_window() {
-                Ok(window) => {
-                    let title = window.title;
-                    
-                    // Check if title contains any blacklisted term (case-insensitive)
-                    for blocked_term in &self.blacklist {
-                        if title.to_lowercase().contains(&blocked_term.to_lowercase()) {
-                            println!("Privacy Guard triggered: Window title contains '{}'", blocked_term);
-                            println!("Skipping capture for: {}", title);
-                            return true;
-                        }
+        match window_title {
+            Some(title) => {
+                // Check if title contains any blacklisted term (case-insensitive)
+                let title_lower = title.to_lowercase();
+                for blocked_term in &self.blacklist {
+                    let term_lower = blocked_term.to_lowercase();
+                    if title_lower.contains(&term_lower) {
+                        println!("Privacy Guard triggered: Window title contains '{}'", blocked_term);
+                        println!("Skipping capture for: {}", title);
+                        return true;
                     }
-                    false
                 }
-                Err(_) => {
-                    // If we can't determine the window, allow capture
-                    false
-                }
-            }
-        }));
-
-        match result {
-            Ok(should_block) => should_block,
-            Err(_) => {
-                // If the native code panics, disable privacy guard for this capture
-                // and continue without crashing
-                eprintln!("Warning: Privacy Guard check failed (native code error)");
-                eprintln!("Continuing without window detection for this capture");
+                // If no match, allow capture
                 false
             }
+            None => {
+                // If we can't detect the window, log it but allow capture
+                // (Better to capture than to block everything if detection fails)
+                eprintln!("[Privacy Guard] Could not detect active window - allowing capture");
+                false
+            }
+        }
+    }
+    
+    /// Get the active window title using native system commands
+    /// This is more stable than FFI libraries and won't crash
+    fn get_active_window_title(&self) -> Option<String> {
+        #[cfg(target_os = "macos")]
+        {
+            use std::process::Command;
+            
+            // Use AppleScript to get the frontmost app and window title
+            let output = Command::new("osascript")
+                .arg("-e")
+                .arg(r#"tell application "System Events" to get name of first process whose frontmost is true"#)
+                .output();
+            
+            if let Ok(output) = output {
+                if output.status.success() {
+                    let app_name = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                    
+                    // Also try to get the window title
+                    let window_output = Command::new("osascript")
+                        .arg("-e")
+                        .arg(format!(
+                            r#"tell application "System Events" to tell process "{}" to get title of front window"#,
+                            app_name
+                        ))
+                        .output();
+                    
+                    if let Ok(window_output) = window_output {
+                        if window_output.status.success() {
+                            let window_title = String::from_utf8_lossy(&window_output.stdout).trim().to_string();
+                            // Return combined app name and window title for better matching
+                            let full_title = format!("{} - {}", app_name, window_title);
+                            println!("[Privacy Guard] Detected window: {}", full_title);
+                            return Some(full_title);
+                        } else {
+                            // Window title failed, but we have app name
+                            println!("[Privacy Guard] Detected app: {} (window title unavailable)", app_name);
+                            return Some(app_name);
+                        }
+                    } else {
+                        // Window title command failed, but we have app name
+                        println!("[Privacy Guard] Detected app: {} (window title unavailable)", app_name);
+                        return Some(app_name);
+                    }
+                } else {
+                    // Failed to get app name - likely missing Accessibility permission
+                    let error = String::from_utf8_lossy(&output.stderr);
+                    eprintln!("[Privacy Guard] Failed to get active window: {}", error);
+                    eprintln!("[Privacy Guard] This usually means Accessibility permission is not granted");
+                    eprintln!("[Privacy Guard] Go to: System Settings > Privacy & Security > Accessibility");
+                }
+            } else {
+                eprintln!("[Privacy Guard] Failed to execute osascript command");
+            }
+            
+            None
+        }
+        
+        #[cfg(target_os = "windows")]
+        {
+            // Windows implementation using PowerShell
+            use std::process::Command;
+            
+            let output = Command::new("powershell")
+                .arg("-Command")
+                .arg("Add-Type @\"\nusing System;\nusing System.Runtime.InteropServices;\nusing System.Text;\npublic class WindowTitle {\n    [DllImport(\"user32.dll\")]\n    static extern IntPtr GetForegroundWindow();\n    [DllImport(\"user32.dll\")]\n    static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);\n    public static string GetActiveWindowTitle() {\n        const int nChars = 256;\n        StringBuilder Buff = new StringBuilder(nChars);\n        IntPtr handle = GetForegroundWindow();\n        if (GetWindowText(handle, Buff, nChars) > 0) return Buff.ToString();\n        return null;\n    }\n}\n\"@; [WindowTitle]::GetActiveWindowTitle()")
+                .output();
+            
+            if let Ok(output) = output {
+                if output.status.success() {
+                    return Some(String::from_utf8_lossy(&output.stdout).trim().to_string());
+                }
+            }
+            
+            None
+        }
+        
+        #[cfg(target_os = "linux")]
+        {
+            // Linux implementation using xdotool
+            use std::process::Command;
+            
+            let output = Command::new("xdotool")
+                .arg("getactivewindow")
+                .arg("getwindowname")
+                .output();
+            
+            if let Ok(output) = output {
+                if output.status.success() {
+                    return Some(String::from_utf8_lossy(&output.stdout).trim().to_string());
+                }
+            }
+            
+            None
         }
     }
 
@@ -293,11 +382,10 @@ impl ScreenRecorder {
 
     /// Capture a single frame from the primary monitor
     pub async fn capture_frame(&mut self) -> Result<()> {
-        // Privacy Guard: TEMPORARILY DISABLED due to crash on Intel Macs
-        // TODO: Replace active-win-pos-rs with a more stable alternative
-        // if self.check_privacy_guard() {
-        //     return Ok(()); // Skip capture silently
-        // }
+        // Privacy Guard: Check if active window is blacklisted
+        if self.check_privacy_guard() {
+            return Ok(()); // Skip capture silently
+        }
 
         // Get all monitors and select the primary one
         let monitors = Monitor::all().context("Failed to get monitors")?;

@@ -87,18 +87,20 @@ See [SECURITY.md](SECURITY.md) for detailed security considerations before using
 - Lucide React icons
 - Similarity score badges on search results
 
-### Phase 6: Privacy Guards (Partially Complete)
+### Phase 6: Privacy Guards (Complete)
 
-- **Window Blacklist**: ⚠️ **Currently Disabled** due to crash on Intel Macs
-  - The `active-win-pos-rs` library causes null pointer crashes on macOS
-  - Code is present but commented out until a stable alternative is found
-  - Planned detection: Password managers, private browsing, privacy tools
-- **Auto-Deletion**: ✅ **Fully Functional** - Retention policy automatically removes data older than 14 days
+- **Window Blacklist**: **Fully Functional** - Automatically skips recording when sensitive applications are detected
+  - Password managers: Bitwarden, 1Password, KeePass, LastPass
+  - Private browsing: Incognito, InPrivate, Private Browsing
+  - Privacy tools: Tor Browser
+  - Uses native system commands (AppleScript on macOS) for maximum stability
+  - No crash risk - replaced buggy FFI library with safe native approach
+- **Auto-Deletion**: **Fully Functional** - Retention policy automatically removes data older than 14 days
   - Deletes database records (frames, OCR text, embeddings)
   - Removes image files from disk
   - Runs on app startup
-- **Privacy Status UI**: Shield icon indicator present in UI
-- **Safe for Daily Use**: ⚠️ Use manual controls when working with sensitive data
+- **Privacy Status UI**: Shield icon indicator showing active protection
+- **Safe for Daily Use**: Critical privacy protections in place
 
 ### How It Works
 
@@ -290,7 +292,7 @@ await invoke<DatabaseStats>('get_database_stats');
 - [x] Full screenshot viewer
 
 ### Phase 6: Privacy Guards
-- [ ] Window blacklist (incognito, password managers) - **Disabled due to Intel Mac crash**
+- [x] Window blacklist (incognito, password managers)
 - [x] Configurable retention policy
 - [x] Auto-delete old data
 

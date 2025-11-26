@@ -28,10 +28,10 @@ Sovereign requires screen recording permissions to function. This grants the app
 - **Storage location:** Screenshots are saved to your OS's application data directory
 - **No encryption:** Screenshots are currently stored as plain .webp files
 - **No access controls:** Any user on your system can read the screenshots
-- **Privacy Guards (Phase 6 - Partial):** 
-  - ⚠️ Window blacklist currently disabled due to crash on Intel Macs
-  - ✅ Auto-deletion removes data older than 14 days (fully functional)
-  - See "Privacy Guards" section below for details
+- **Privacy Guards (Phase 6 - Active):** 
+  - Window blacklist prevents capture of password managers and private browsing
+  - Auto-deletion removes data older than 14 days
+  - See "Privacy Guards" section below
 
 ### Recommendations
 
@@ -57,22 +57,27 @@ Sovereign requires screen recording permissions to function. This grants the app
    - Per-window privacy settings
    - User authentication for screenshot access
 
-## Privacy Guards (Phase 6 - Partially Active)
+## Privacy Guards (Phase 6 - Active)
 
-**Window Blacklist - ⚠️ Currently Disabled:**
-The window detection feature is **temporarily disabled** due to a critical crash bug:
+**Window Blacklist - ✅ Fully Functional:**
+The app automatically skips recording when it detects sensitive applications:
 
-- **Issue**: The `active-win-pos-rs` library (v0.8.4) causes a `null pointer dereference` panic on Intel-based Macs
-- **Impact**: The panic cannot be caught or recovered from, causing the entire application to crash
-- **Root Cause**: Bug in the library's native macOS (AppKit) bindings when accessing window information
-- **Status**: Code is present but commented out in `src-tauri/src/recorder.rs` (lines 295-299)
-- **Workaround**: Manually quit the app when working with sensitive data (password managers, private browsing)
-- **Future**: Will be re-enabled when a stable cross-platform alternative is found
+- **Protected Applications:**
+  - Password Managers: Bitwarden, 1Password, KeePass, LastPass
+  - Private Browsing: Incognito, InPrivate, Private Browsing
+  - Privacy Tools: Tor Browser
 
-**Planned Blacklist Terms** (when re-enabled):
-- Password Managers: Bitwarden, 1Password, KeePass, LastPass
-- Private Browsing: Incognito, InPrivate, Private Browsing
-- Privacy Tools: Tor Browser
+- **Implementation:**
+  - Uses native system commands for maximum stability (AppleScript on macOS, PowerShell on Windows, xdotool on Linux)
+  - No external FFI libraries that could crash
+  - Matches against both application name and window title
+  - Case-insensitive matching
+
+- **Behavior:**
+  - When a blacklisted window is detected, the capture is skipped
+  - Terminal logs: "Privacy Guard triggered: Window title contains '[term]'"
+  - No screenshot saved, no database entry created
+  - Completely transparent to the user
 
 **Auto-Deletion Policy - ✅ Fully Functional:**
 - Data older than 14 days is automatically deleted on app startup
@@ -81,16 +86,16 @@ The window detection feature is **temporarily disabled** due to a critical crash
 - Verified working on macOS, Windows, and Linux
 
 **Privacy Status UI:**
-- Green shield icon displayed in UI (indicates privacy features present)
+- Green shield icon indicates Privacy Guard is active
 - Statistics show current retention policy (14 days)
-- Visible confirmation that auto-deletion is active
+- Visible confirmation that protections are in place
 
 ## Known Limitations
 
-- **Window blacklist disabled** on Intel Macs due to `active-win-pos-rs` crash bug
 - No password protection on stored screenshots
 - No encryption at rest
 - Blacklist configuration is hardcoded (user configuration planned for future)
+- Requires AppleScript permissions on macOS (automatically granted)
 - Timestamps in filenames could reveal user activity patterns
 - No per-window granular control (future feature)
 

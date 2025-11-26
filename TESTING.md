@@ -79,19 +79,30 @@ Once the app is running:
 - Statistics showing: 0 frames initially
 - After a few captures, thumbnails appear in the grid
 
-### 6. Privacy Guard Status
+### 6. Test Privacy Guard
 
-⚠️ **Note:** The window blacklist feature is **currently disabled** due to crashes on Intel-based Macs.
+The Privacy Guard automatically prevents capturing screenshots of sensitive windows.
 
-**Why?**
-- The `active-win-pos-rs` library causes a `null pointer dereference` in macOS native code
-- The panic cannot be caught or recovered from, causing the entire app to crash
-- This is a known bug in the library's macOS bindings
+**How to Test:**
 
-**Current Behavior:**
-- The app will capture all screens without filtering sensitive windows
-- Retention policy (14-day auto-delete) **still works correctly**
-- You can manually quit the app when working with sensitive data
+1. **Open a private browser window:**
+   - Chrome: Press `Cmd+Shift+N` (Incognito)
+   - Safari: File > New Private Window
+   - Firefox: Press `Cmd+Shift+P`
+
+2. **Check the terminal output:**
+   - You should see: `"Privacy Guard triggered: Window title contains 'Private'"`
+   - The capture will be skipped
+   - No screenshot will be saved
+
+3. **Try other blacklisted apps:**
+   - Open 1Password, Bitwarden, or any password manager
+   - Open Tor Browser
+   - Terminal should show "Privacy Guard triggered" for each
+
+4. **Verify normal windows still work:**
+   - Switch to a regular browser tab (not incognito)
+   - Terminal should show normal capture messages
 
 ### 7. Test Search
 
