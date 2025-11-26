@@ -2,7 +2,7 @@
 
 **Privacy-First Screen Memory Tool**
 
-A high-performance, local-only screen recording and search system built as an alternative to Microsoft Recall. Runs 24/7 without draining battery or hoarding RAM.
+A high-performance, local-only screen recording and search system. Runs continuously without draining battery or consuming excessive memory.
 
 ## Philosophy
 
@@ -15,7 +15,6 @@ All processing happens locally on your device. No cloud, no telemetry, complete 
 **IMPORTANT: This software captures ALL visible content on your screen, including sensitive information.**
 
 - Screenshots are stored UNENCRYPTED on your local disk
-- No privacy filters or blacklisting (yet - planned for Phase 6)
 - Anyone with access to your computer can view screenshots
 - Use at your own risk
 
@@ -25,7 +24,7 @@ See [SECURITY.md](SECURITY.md) for detailed security considerations before using
 
 - **Backend**: Rust with Tauri v2
 - **Frontend**: React + TypeScript + Tailwind CSS
-- **Database**: SQLite (with vector search planned)
+- **Database**: SQLite with vector search
 - **Screen Capture**: xcap
 - **Image Processing**: WebP compression
 - **OCR**: rusty-tesseract
@@ -33,79 +32,51 @@ See [SECURITY.md](SECURITY.md) for detailed security considerations before using
 
 ## Features
 
-### Phase 1: Core Loop (Complete)
+### Screen Capture
 
-- Screen capture every 2 seconds
+- Automatic capture every 2 seconds
 - Smart deduplication using perceptual hashing
 - Automatic 1080p resizing for 4K displays
 - High-compression WebP storage
-- Cross-platform path handling with Tauri's AppData
-- Automatic startup on app launch
-- Clean React UI with status indicator
+- Cross-platform path handling
+- Only saves screenshots when the screen has changed
 
-### Phase 2: OCR & Embeddings (Complete)
+### Text Extraction & Search
 
 - OCR text extraction using Tesseract
 - Image preprocessing for optimal recognition
-- Fastembed integration for 384-dimensional vectors (completely offline)
-- Full pipeline: Capture → Resize → OCR → Embedding
-- Graceful degradation if embedding model unavailable (app continues with OCR only)
-
-**Embedding Model Setup**: The app loads embedding models completely offline from cache. To enable embeddings, manually download the model files once (see Installation section below).
-
-### Phase 3: The Memory (Complete)
-
-- SQLite database with full schema implementation
-- Three tables: `frames`, `ocr_text`, `embeddings`
-- Automatic data persistence after each capture
-- Vector embeddings stored as binary blobs (bincode serialization)
-- Database location: `<app_data>/sovereign.db`
-- Startup statistics showing total stored data
-- Indexed for query performance
-
-### Phase 4: The Recall (Complete)
-
-- Natural language semantic search using vector embeddings
-- Cosine similarity ranking of all stored frames
+- Semantic search using 384-dimensional vector embeddings
+- Natural language queries with cosine similarity ranking
 - Top-20 results with similarity scores
-- `search_frames(query)` Tauri command for frontend
-- `get_recent_frames(limit)` for timeline view
-- `get_database_stats()` for app statistics
-- Efficient vector comparison in Rust
-- Full metadata joins (frames + OCR text)
+- Completely offline - no network requests required
 
-### Phase 5: The Face (Complete)
+### Privacy Guards
+
+- **Window Blacklist**: Automatically skips recording when sensitive applications are detected
+  - Password managers: Bitwarden, 1Password, KeePass, LastPass
+  - Private browsing: Incognito, InPrivate, Private Browsing
+  - Privacy tools: Tor Browser
+  - Uses native system commands for maximum stability
+- **Auto-Deletion**: Retention policy automatically removes data older than 14 days
+  - Deletes database records (frames, OCR text, embeddings)
+  - Removes image files from disk
+  - Runs on app startup
+- **Privacy Status UI**: Shield icon indicator showing active protection
+
+### User Interface
 
 - Modern dark-mode UI with Tailwind CSS
 - Cmd+K style search bar with keyboard shortcuts
 - Timeline slider for navigating history
 - Responsive masonry grid layout
 - Full-screen modal viewer for images + OCR text
-- TanStack Query for efficient data fetching
-- Real-time frame updates (5s polling)
+- Real-time frame updates
 - Live statistics dashboard
-- Lucide React icons
-- Similarity score badges on search results
 
-### Phase 6: Privacy Guards (Complete)
-
-- **Window Blacklist**: **Fully Functional** - Automatically skips recording when sensitive applications are detected
-  - Password managers: Bitwarden, 1Password, KeePass, LastPass
-  - Private browsing: Incognito, InPrivate, Private Browsing
-  - Privacy tools: Tor Browser
-  - Uses native system commands (AppleScript on macOS) for maximum stability
-  - No crash risk - replaced buggy FFI library with safe native approach
-- **Auto-Deletion**: **Fully Functional** - Retention policy automatically removes data older than 14 days
-  - Deletes database records (frames, OCR text, embeddings)
-  - Removes image files from disk
-  - Runs on app startup
-- **Privacy Status UI**: Shield icon indicator showing active protection
-- **Safe for Daily Use**: Critical privacy protections in place
-
-### How It Works
+## How It Works
 
 1. **Privacy Check**: Checks if the active window is on the blacklist
-2. **Capture**: The app monitors your primary display every 2 seconds
+2. **Capture**: Monitors your primary display every 2 seconds
 3. **Smart Check**: Calculates a perceptual hash of the screen
 4. **Deduplication**: Only saves screenshots when the screen has changed
 5. **OCR**: Extracts text from the image using Tesseract
@@ -120,7 +91,6 @@ See [SECURITY.md](SECURITY.md) for detailed security considerations before using
 
 **1. Node.js and Rust**
 - **Node.js 20.19+ or 22.12+** (LTS versions recommended)
-  - Node 21 and below are End-of-Life and not supported
   - Check version: `node --version`
   - Install from: https://nodejs.org/
 - Rust 1.70+
@@ -168,7 +138,7 @@ npm install
 
 3. (Optional) Download embedding model for semantic search:
 
-**Note**: The app works perfectly without embeddings (OCR only). Embeddings enable future semantic search features (Phase 4).
+**Note**: The app works perfectly without embeddings (OCR only). Embeddings enable semantic search features.
 
 #### Linux / macOS
 
@@ -208,7 +178,21 @@ Write-Host "Model files downloaded to: $cacheDir"
 npm run tauri dev
 ```
 
-**macOS Users:** When the app first runs, macOS will prompt for **Screen Recording** permission. Click "Open System Settings", enable the permission for Sovereign, then restart the app. See `TESTING.md` for detailed setup instructions.
+**macOS Users - Required Permissions:**
+
+When the app first runs, macOS will prompt for permissions:
+
+1. **Screen Recording Permission** (Required):
+   - Click "Open System Settings" when prompted
+   - Go to **System Settings > Privacy & Security > Screen Recording**
+   - Enable "Sovereign" (or "Cursor" if running in dev mode)
+   - Restart the app
+
+2. **Accessibility Permission** (Required for Privacy Guard):
+   - Go to **System Settings > Privacy & Security > Accessibility**
+   - Enable "Sovereign" (or "Cursor" if running in dev mode)
+   - This allows the app to detect active window titles for blacklist checking
+   - Restart the app after enabling
 
 ### Build for Production
 
@@ -267,6 +251,11 @@ The database contains:
 - Works best with clear, high-contrast text
 - Small/blurry text may not be recognized accurately
 
+### Privacy Guard not working
+- Ensure Accessibility permission is enabled (see macOS Permissions above)
+- Check terminal output for "[Privacy Guard] Failed to get active window" messages
+- Restart the app after enabling Accessibility permission
+- Privacy Guard requires both Screen Recording and Accessibility permissions
 
 ## API Reference
 
@@ -283,26 +272,16 @@ await invoke<FrameMetadata[]>('get_recent_frames', { limit: 50 });
 await invoke<DatabaseStats>('get_database_stats');
 ```
 
-## Roadmap
+## Future Enhancements
 
-### Phase 5: The Face (UI Construction)
-- [x] Timeline slider
-- [x] Search bar (cmd+k style)
-- [x] Grid view for results
-- [x] Full screenshot viewer
-
-### Phase 6: Privacy Guards
-- [x] Window blacklist (incognito, password managers)
-- [x] Configurable retention policy
-- [x] Auto-delete old data
-
-### Future Enhancements
-- [ ] User-configurable blacklist
-- [ ] Per-window privacy settings
-- [ ] Encrypted storage option
-- [ ] Export/import data
-- [ ] Advanced search filters
-- [ ] Activity timeline visualization
+- User-configurable blacklist
+- Per-window privacy settings
+- Encrypted storage option
+- Export/import data
+- Advanced search filters
+- Activity timeline visualization
+- Password protection for stored screenshots
+- Per-window granular control
 
 ## Project Structure
 

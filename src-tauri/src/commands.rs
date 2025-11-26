@@ -24,12 +24,24 @@ pub async fn search_frames(
         return Ok(vec![]);
     }
 
+    // Validate and sanitize query input
+    let query = query.trim();
+    if query.is_empty() {
+        return Ok(vec![]);
+    }
+    
+    // Limit query length to prevent DoS
+    if query.len() > 1000 {
+        return Err("Query too long. Maximum 1000 characters.".to_string());
+    }
+
     // Generate query embedding
-    let embedding_model = state.embedding_model.lock().unwrap();
+    let embedding_model = state.embedding_model.lock()
+        .map_err(|_| "Database lock error".to_string())?;
     let query_vector = match embedding_model.as_ref() {
         Some(model) => {
             let embeddings = model
-                .embed(vec![query.as_str()], None)
+                .embed(vec![query], None)
                 .map_err(|e| format!("Failed to generate query embedding: {}", e))?;
             
             embeddings.into_iter().next().unwrap_or_default()
@@ -43,7 +55,8 @@ pub async fn search_frames(
     println!("Query embedding generated ({} dimensions)", query_vector.len());
 
     // Fetch all embeddings from database
-    let db = state.database.lock().unwrap();
+    let db = state.database.lock()
+        .map_err(|_| "Database lock error".to_string())?;
     let all_embeddings = db
         .get_all_embeddings()
         .map_err(|e| format!("Failed to fetch embeddings: {}", e))?;
@@ -122,7 +135,11 @@ pub async fn get_recent_frames(
     limit: usize,
     state: State<'_, AppState>,
 ) -> Result<Vec<FrameMetadata>, String> {
-    let db = state.database.lock().unwrap();
+    // Validate limit to prevent DoS
+    let limit = limit.min(1000);
+    
+    let db = state.database.lock()
+        .map_err(|_| "Database lock error".to_string())?;
     
     let frames = db
         .get_recent_frames(limit)
@@ -138,7 +155,8 @@ pub async fn get_recent_frames(
 pub async fn get_database_stats(
     state: State<'_, AppState>,
 ) -> Result<crate::database::DatabaseStats, String> {
-    let db = state.database.lock().unwrap();
+    let db = state.database.lock()
+        .map_err(|_| "Database lock error".to_string())?;
     
     let stats = db
         .get_stats()

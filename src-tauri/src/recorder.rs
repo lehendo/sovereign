@@ -241,11 +241,18 @@ impl ScreenRecorder {
                     let app_name = String::from_utf8_lossy(&output.stdout).trim().to_string();
                     
                     // Also try to get the window title
+                    // Sanitize app_name to prevent command injection
+                    let sanitized_app_name = app_name
+                        .replace('"', "")
+                        .replace('\n', "")
+                        .replace('\r', "")
+                        .replace('\\', "");
+                    
                     let window_output = Command::new("osascript")
                         .arg("-e")
                         .arg(format!(
                             r#"tell application "System Events" to tell process "{}" to get title of front window"#,
-                            app_name
+                            sanitized_app_name
                         ))
                         .output();
                     
@@ -462,18 +469,18 @@ impl ScreenRecorder {
             filepath.display()
         );
 
-        // Phase 3: Insert frame into database
+        // Insert frame into database
         let frame_id = self.database.insert_frame(
             timestamp,
             filepath.to_str().unwrap_or(&filename),
             &hash_string,
-            None, // app_name (TODO: Phase 6)
-            None, // window_title (TODO: Phase 6)
+            None, // app_name (future feature)
+            None, // window_title (future feature)
         ).context("Failed to insert frame into database")?;
 
-        println!("✓ Frame saved to database (ID: {})", frame_id);
+        println!("Frame saved to database (ID: {})", frame_id);
 
-        // Phase 2: OCR and Embedding Generation
+        // OCR and Embedding Generation
         println!("Performing OCR...");
         let ocr_text = match self.extract_text_from_image(&img) {
             Ok(text) => {
@@ -498,7 +505,7 @@ impl ScreenRecorder {
             if let Err(e) = self.database.insert_ocr_text(frame_id, &ocr_text) {
                 eprintln!("Failed to insert OCR text: {:#}", e);
             } else {
-                println!("✓ OCR text saved to database");
+                println!("OCR text saved to database");
             }
         }
 
@@ -508,14 +515,14 @@ impl ScreenRecorder {
                 println!("Generating embedding...");
                 match self.generate_embedding(&ocr_text) {
                     Ok(embedding) => {
-                        println!("✓ Embedding vector length: {}", embedding.len());
-                        println!("✓ First 5 dimensions: {:?}", &embedding[..5.min(embedding.len())]);
+                        println!("Embedding vector length: {}", embedding.len());
+                        println!("First 5 dimensions: {:?}", &embedding[..5.min(embedding.len())]);
                         
                         // Save embedding to database
                         if let Err(e) = self.database.insert_embedding(frame_id, &embedding) {
                             eprintln!("Failed to insert embedding: {:#}", e);
                         } else {
-                            println!("✓ Embedding saved to database");
+                            println!("Embedding saved to database");
                         }
                     }
                     Err(e) => {

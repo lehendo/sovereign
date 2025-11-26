@@ -5,7 +5,7 @@ use sovereign_lib::{commands, AppState, Database, ScreenRecorder};
 use std::sync::{Arc, Mutex};
 use tauri::Manager;
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
@@ -15,11 +15,17 @@ fn main() {
             let db_path = app_handle
                 .path()
                 .app_data_dir()
-                .expect("Failed to get app data directory")
+                .map_err(|e| {
+                    eprintln!("FATAL: Failed to get app data directory: {:#}", e);
+                    format!("Failed to get app data directory: {}", e)
+                })?
                 .join("sovereign.db");
 
             let database = Database::new(db_path)
-                .expect("Failed to initialize database");
+                .map_err(|e| {
+                    eprintln!("FATAL: Failed to initialize database: {:#}", e);
+                    e
+                })?;
 
             // Prune old data (default: keep last 14 days)
             println!("Running retention policy check...");
@@ -70,6 +76,11 @@ fn main() {
             commands::get_database_stats,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .map_err(|e| {
+            eprintln!("FATAL: Failed to run Tauri application: {:#}", e);
+            e
+        })?;
+        
+        Ok(())
 }
 

@@ -20,7 +20,7 @@ Sovereign requires screen recording permissions to function. This grants the app
 **Important:**
 - Screenshots are stored unencrypted on your local disk
 - Anyone with access to your computer can view captured screenshots
-- Use at your own risk - this is early-stage software
+- Use at your own risk
 
 ### Data Privacy
 
@@ -28,7 +28,7 @@ Sovereign requires screen recording permissions to function. This grants the app
 - **Storage location:** Screenshots are saved to your OS's application data directory
 - **No encryption:** Screenshots are currently stored as plain .webp files
 - **No access controls:** Any user on your system can read the screenshots
-- **Privacy Guards (Phase 6 - Active):** 
+- **Privacy Guards Active:**
   - Window blacklist prevents capture of password managers and private browsing
   - Auto-deletion removes data older than 14 days
   - See "Privacy Guards" section below
@@ -47,9 +47,9 @@ Sovereign requires screen recording permissions to function. This grants the app
    - Use full disk encryption on your OS
 
 3. **Active Privacy Features:**
-   - Window blacklisting for sensitive apps (Phase 6 - Active)
-   - Auto-deletion after 14 days (Phase 6 - Active)
-   - Privacy status indicator in UI (Phase 6 - Active)
+   - Window blacklisting for sensitive apps
+   - Auto-deletion after 14 days
+   - Privacy status indicator in UI
 
 4. **Future Security Features (Planned):**
    - Encryption at rest
@@ -57,9 +57,9 @@ Sovereign requires screen recording permissions to function. This grants the app
    - Per-window privacy settings
    - User authentication for screenshot access
 
-## Privacy Guards (Phase 6 - Active)
+## Privacy Guards
 
-**Window Blacklist - ✅ Fully Functional:**
+**Window Blacklist - Fully Functional:**
 The app automatically skips recording when it detects sensitive applications:
 
 - **Protected Applications:**
@@ -79,14 +79,14 @@ The app automatically skips recording when it detects sensitive applications:
   - No screenshot saved, no database entry created
   - Completely transparent to the user
 
-**Auto-Deletion Policy - ✅ Fully Functional:**
+**Auto-Deletion Policy - Fully Functional:**
 - Data older than 14 days is automatically deleted on app startup
 - Includes: Database records, OCR text, embeddings, and image files
 - Helps maintain privacy and manage storage space
 - Verified working on macOS, Windows, and Linux
 
 **Privacy Status UI:**
-- Green shield icon indicates Privacy Guard is active
+- Shield icon indicates Privacy Guard is active
 - Statistics show current retention policy (14 days)
 - Visible confirmation that protections are in place
 
@@ -116,4 +116,3 @@ Security patches will be released as soon as possible after discovery. Users are
 ## License
 
 This software is provided "AS IS" without warranty of any kind. See LICENSE file for details.
-

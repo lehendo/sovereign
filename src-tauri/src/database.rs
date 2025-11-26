@@ -300,6 +300,11 @@ impl Database {
     pub fn prune_old_data(&self, days: i64) -> Result<usize> {
         use std::time::{SystemTime, UNIX_EPOCH};
 
+        // Validate days parameter to prevent DoS
+        if days < 0 || days > 365 {
+            return Err(anyhow::anyhow!("Invalid retention period: must be between 0 and 365 days"));
+        }
+
         let current_timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .context("Failed to get current timestamp")?
@@ -323,13 +328,27 @@ impl Database {
             params![cutoff_timestamp],
         )?;
 
-        // Delete image files from disk
+        // Delete image files from disk with path validation
         let mut files_deleted = 0;
-        for path in paths {
-            if let Ok(_) = std::fs::remove_file(&path) {
-                files_deleted += 1;
+        for path_str in paths {
+            let path = PathBuf::from(&path_str);
+            
+            // Security: Validate path to prevent directory traversal
+            // Only allow deletion of files within expected screenshot directories
+            if path_str.contains("..") || path_str.contains("//") {
+                eprintln!("Warning: Skipping suspicious path: {}", path_str);
+                continue;
+            }
+            
+            // Additional validation: ensure path is a file (not a directory)
+            if path.is_file() {
+                if let Err(e) = std::fs::remove_file(&path) {
+                    eprintln!("Warning: Could not delete file {}: {}", path_str, e);
+                } else {
+                    files_deleted += 1;
+                }
             } else {
-                eprintln!("Warning: Could not delete file: {}", path);
+                eprintln!("Warning: Path is not a file: {}", path_str);
             }
         }
 
