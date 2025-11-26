@@ -5,7 +5,7 @@ import { SearchBar } from "./components/SearchBar";
 import { Timeline } from "./components/Timeline";
 import { Grid } from "./components/Grid";
 import { Modal } from "./components/Modal";
-import { Activity, Database as DatabaseIcon } from "lucide-react";
+import { Activity, Database as DatabaseIcon, Shield } from "lucide-react";
 import type { FrameMetadata, DatabaseStats } from "./types";
 
 const queryClient = new QueryClient({
@@ -78,6 +78,10 @@ function AppContent() {
 
             {stats && (
               <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/30 rounded-lg">
+                  <Shield className="w-4 h-4 text-green-500" />
+                  <span className="text-green-400">Privacy Guard Active</span>
+                </div>
                 <div className="flex items-center gap-2 px-3 py-1 bg-gray-800 rounded-lg">
                   <DatabaseIcon className="w-4 h-4 text-gray-400" />
                   <span className="text-gray-400">{stats.total_frames} frames</span>
@@ -124,6 +128,20 @@ function AppContent() {
               onRangeChange={handleTimelineChange}
             />
 
+            {/* Privacy Guard Card */}
+            <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Shield className="w-4 h-4 text-green-500" />
+                <h3 className="text-sm font-semibold text-gray-300">Privacy Guard</h3>
+              </div>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Automatically skips recording when sensitive windows are detected (password managers, private browsing, etc.)
+              </p>
+              <div className="mt-3 px-2 py-1 bg-green-500/10 border border-green-500/30 rounded text-xs text-green-400 text-center">
+                Active
+              </div>
+            </div>
+
             {/* Stats Card */}
             {stats && (
               <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
@@ -140,6 +158,10 @@ function AppContent() {
                   <div className="flex justify-between">
                     <span className="text-gray-500">Embeddings</span>
                     <span className="text-white font-mono">{stats.total_embeddings}</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t border-gray-800">
+                    <span className="text-gray-500">Retention</span>
+                    <span className="text-white font-mono">14 days</span>
                   </div>
                 </div>
               </div>

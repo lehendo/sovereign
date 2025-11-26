@@ -17,6 +17,7 @@ pub struct ScreenRecorder {
     embedding_model: Option<TextEmbedding>,
     database: Database,
     app_handle: AppHandle,
+    blacklist: Vec<String>,
 }
 
 impl ScreenRecorder {
@@ -167,13 +168,52 @@ impl ScreenRecorder {
                 None
             });
 
+        // Initialize privacy blacklist
+        let blacklist = vec![
+            "Incognito".to_string(),
+            "Private".to_string(),
+            "Tor Browser".to_string(),
+            "Bitwarden".to_string(),
+            "1Password".to_string(),
+            "KeePass".to_string(),
+            "LastPass".to_string(),
+            "InPrivate".to_string(), // Edge private mode
+            "Private Browsing".to_string(), // Firefox/Safari
+        ];
+
         Ok(Self {
             last_hash: None,
             hasher,
             embedding_model,
             database,
             app_handle,
+            blacklist,
         })
+    }
+
+    /// Check if the current window should be blocked by privacy guard
+    fn check_privacy_guard(&self) -> bool {
+        // Try to get the active window
+        match active_win_pos_rs::get_active_window() {
+            Ok(window) => {
+                let title = window.title;
+                
+                // Check if title contains any blacklisted term (case-insensitive)
+                for blocked_term in &self.blacklist {
+                    if title.to_lowercase().contains(&blocked_term.to_lowercase()) {
+                        println!("Privacy Guard triggered: Window title contains '{}'", blocked_term);
+                        println!("Skipping capture for: {}", title);
+                        return true;
+                    }
+                }
+                false
+            }
+            Err(_) => {
+                eprintln!("Warning: Could not get active window");
+                // If we can't determine the window, allow capture
+                false
+            }
+        }
     }
 
     /// Get the screenshots directory path using Tauri's AppData
@@ -239,6 +279,11 @@ impl ScreenRecorder {
 
     /// Capture a single frame from the primary monitor
     pub async fn capture_frame(&mut self) -> Result<()> {
+        // Privacy Guard: Check if active window is blacklisted
+        if self.check_privacy_guard() {
+            return Ok(()); // Skip capture silently
+        }
+
         // Get all monitors and select the primary one
         let monitors = Monitor::all().context("Failed to get monitors")?;
         let primary_monitor = monitors

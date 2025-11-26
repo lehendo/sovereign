@@ -26,8 +26,12 @@ Sovereign requires screen recording permissions to function. This grants the app
 
 - **All data stays local:** No telemetry, no cloud uploads, no network requests for data
 - **Storage location:** Screenshots are saved to your OS's application data directory
-- **No encryption (Phase 1):** Screenshots are currently stored as plain .webp files
-- **No access controls (Phase 1):** Any user on your system can read the screenshots
+- **No encryption:** Screenshots are currently stored as plain .webp files
+- **No access controls:** Any user on your system can read the screenshots
+- **Privacy Guards Active (Phase 6):** 
+  - Window blacklist prevents capture of password managers and private browsing
+  - Auto-deletion removes data older than 14 days
+  - See "Privacy Guards" section below
 
 ### Recommendations
 
@@ -42,18 +46,44 @@ Sovereign requires screen recording permissions to function. This grants the app
    - Keep your computer physically secure
    - Use full disk encryption on your OS
 
-3. **Future Security Features (Planned):**
-   - Encryption at rest (Phase 3)
-   - Window blacklisting for sensitive apps (Phase 6)
-   - Configurable retention policies (Phase 6)
+3. **Active Privacy Features:**
+   - Window blacklisting for sensitive apps (Phase 6 - Active)
+   - Auto-deletion after 14 days (Phase 6 - Active)
+   - Privacy status indicator in UI (Phase 6 - Active)
+
+4. **Future Security Features (Planned):**
+   - Encryption at rest
+   - User-configurable blacklist
+   - Per-window privacy settings
    - User authentication for screenshot access
+
+## Privacy Guards (Phase 6 - Active)
+
+**Window Blacklist:**
+The app automatically skips recording when it detects sensitive applications:
+- Password Managers: Bitwarden, 1Password, KeePass, LastPass
+- Private Browsing: Incognito, InPrivate, Private Browsing
+- Privacy Tools: Tor Browser
+
+When a blacklisted window is detected, the capture is skipped and logged with "Privacy Guard triggered".
+
+**Auto-Deletion Policy:**
+- Data older than 14 days is automatically deleted on app startup
+- Includes: Database records, OCR text, embeddings, and image files
+- Helps maintain privacy and manage storage space
+
+**Privacy Status UI:**
+- Green shield icon indicates Privacy Guard is active
+- Statistics show current retention policy (14 days)
+- Visible confirmation that protections are in place
 
 ## Known Limitations
 
-- Phase 1 has no privacy controls - all screen content is captured
+- Blacklist is currently hardcoded (user configuration planned for future)
 - No password protection on stored screenshots
-- No automatic deletion of sensitive content
+- No encryption at rest
 - Timestamps in filenames could reveal user activity patterns
+- No per-window granular control (future feature)
 
 ## Dependencies
 

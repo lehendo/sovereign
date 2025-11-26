@@ -294,5 +294,53 @@ impl Database {
 
         Ok(frames)
     }
+
+    /// Prune old data from the database and delete files from disk
+    /// Deletes frames older than the specified number of days
+    pub fn prune_old_data(&self, days: i64) -> Result<usize> {
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        let current_timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .context("Failed to get current timestamp")?
+            .as_secs() as i64;
+
+        let cutoff_timestamp = current_timestamp - (days * 24 * 60 * 60);
+
+        // First, fetch all image paths that will be deleted
+        let mut stmt = self.conn.prepare(
+            "SELECT image_path FROM frames WHERE timestamp < ?1"
+        )?;
+
+        let paths: Vec<String> = stmt.query_map([cutoff_timestamp], |row| {
+            row.get(0)
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+        // Delete from database (cascades to ocr_text and embeddings)
+        let deleted_count = self.conn.execute(
+            "DELETE FROM frames WHERE timestamp < ?1",
+            params![cutoff_timestamp],
+        )?;
+
+        // Delete image files from disk
+        let mut files_deleted = 0;
+        for path in paths {
+            if let Ok(_) = std::fs::remove_file(&path) {
+                files_deleted += 1;
+            } else {
+                eprintln!("Warning: Could not delete file: {}", path);
+            }
+        }
+
+        if deleted_count > 0 {
+            println!(
+                "Pruned {} frames older than {} days ({} files deleted from disk)",
+                deleted_count, days, files_deleted
+            );
+        }
+
+        Ok(deleted_count)
+    }
 }
 

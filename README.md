@@ -87,15 +87,30 @@ See [SECURITY.md](SECURITY.md) for detailed security considerations before using
 - Lucide React icons
 - Similarity score badges on search results
 
+### Phase 6: Privacy Guards (Complete)
+
+- **Window Blacklist**: Automatically skips recording when sensitive applications are detected
+  - Password managers: Bitwarden, 1Password, KeePass, LastPass
+  - Private browsing: Incognito, InPrivate, Private Browsing
+  - Privacy tools: Tor Browser
+- **Auto-Deletion**: Retention policy automatically removes data older than 14 days
+  - Deletes database records (frames, OCR text, embeddings)
+  - Removes image files from disk
+  - Runs on app startup
+- **Privacy Status UI**: Shield icon indicator showing active protection
+- **Safe for Daily Use**: Critical privacy protections in place
+
 ### How It Works
 
-1. **Capture**: The app monitors your primary display every 2 seconds
-2. **Smart Check**: Calculates a perceptual hash of the screen
-3. **Deduplication**: Only saves screenshots when the screen has changed
-4. **OCR**: Extracts text from the image using Tesseract
-5. **Embedding**: Generates semantic 384-dimensional vectors
-6. **Storage**: Saves .webp images + metadata/text/vectors to SQLite
-7. **Search**: Query in natural language, get ranked results by semantic similarity
+1. **Privacy Check**: Checks if the active window is on the blacklist
+2. **Capture**: The app monitors your primary display every 2 seconds
+3. **Smart Check**: Calculates a perceptual hash of the screen
+4. **Deduplication**: Only saves screenshots when the screen has changed
+5. **OCR**: Extracts text from the image using Tesseract
+6. **Embedding**: Generates semantic 384-dimensional vectors
+7. **Storage**: Saves .webp images + metadata/text/vectors to SQLite
+8. **Search**: Query in natural language, get ranked results by semantic similarity
+9. **Auto-Cleanup**: Removes data older than 14 days on startup
 
 ## Installation
 
@@ -272,10 +287,18 @@ await invoke<DatabaseStats>('get_database_stats');
 - [x] Grid view for results
 - [x] Full screenshot viewer
 
-### Phase 6: Privacy Guards (Next)
-- [ ] Window blacklist (incognito, password managers)
-- [ ] Configurable retention policy
-- [ ] Auto-delete old data
+### Phase 6: Privacy Guards
+- [x] Window blacklist (incognito, password managers)
+- [x] Configurable retention policy
+- [x] Auto-delete old data
+
+### Future Enhancements
+- [ ] User-configurable blacklist
+- [ ] Per-window privacy settings
+- [ ] Encrypted storage option
+- [ ] Export/import data
+- [ ] Advanced search filters
+- [ ] Activity timeline visualization
 
 ## Project Structure
 
@@ -293,9 +316,9 @@ sovereign/
 │   └── index.css            # Tailwind styles
 ├── src-tauri/
 │   ├── src/
-│   │   ├── main.rs          # Tauri app + commands
-│   │   ├── recorder.rs      # Capture + OCR + embeddings
-│   │   ├── database.rs      # SQLite persistence
+│   │   ├── main.rs          # Tauri app + commands + retention
+│   │   ├── recorder.rs      # Capture + OCR + embeddings + blacklist
+│   │   ├── database.rs      # SQLite persistence + pruning
 │   │   ├── search.rs        # Cosine similarity search
 │   │   ├── commands.rs      # Tauri command handlers
 │   │   └── lib.rs           # Module declarations

@@ -21,6 +21,16 @@ fn main() {
             let database = Database::new(db_path)
                 .expect("Failed to initialize database");
 
+            // Prune old data (default: keep last 14 days)
+            println!("Running retention policy check...");
+            match database.prune_old_data(14) {
+                Ok(count) if count > 0 => {
+                    println!("Retention policy: Removed {} old frames", count);
+                },
+                Ok(_) => println!("Retention policy: No old frames to remove"),
+                Err(e) => eprintln!("Warning: Failed to prune old data: {}", e),
+            }
+
             // Initialize embedding model (shared between recorder and search)
             let embedding_model = ScreenRecorder::load_embedding_model_offline()
                 .unwrap_or_else(|e| {
