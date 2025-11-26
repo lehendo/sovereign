@@ -2,6 +2,8 @@ use anyhow::{Context, Result};
 use rusqlite::{params, Connection};
 use std::path::PathBuf;
 
+use crate::search::FrameMetadata;
+
 pub struct Database {
     conn: Connection,
 }
@@ -167,10 +169,130 @@ impl Database {
 }
 
 /// Database statistics
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct DatabaseStats {
     pub total_frames: i64,
     pub total_ocr_entries: i64,
     pub total_embeddings: i64,
+}
+
+impl Database {
+    /// Fetch all embeddings (frame_id and vector) for similarity search
+    pub fn get_all_embeddings(&self) -> Result<Vec<(i64, Vec<f32>)>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT frame_id, vector FROM embeddings"
+        )?;
+
+        let embeddings = stmt.query_map([], |row| {
+            let frame_id: i64 = row.get(0)?;
+            let vector_blob: Vec<u8> = row.get(1)?;
+            
+            // Deserialize the vector from bincode
+            let vector: Vec<f32> = bincode::deserialize(&vector_blob)
+                .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
+                    1,
+                    rusqlite::types::Type::Blob,
+                    Box::new(e),
+                ))?;
+            
+            Ok((frame_id, vector))
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(embeddings)
+    }
+
+    /// Get frame metadata by ID
+    pub fn get_frame_by_id(&self, frame_id: i64) -> Result<Option<FrameMetadata>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT f.id, f.timestamp, f.image_path, f.app_name, f.window_title, o.raw_text
+             FROM frames f
+             LEFT JOIN ocr_text o ON f.id = o.frame_id
+             WHERE f.id = ?1"
+        )?;
+
+        let result = stmt.query_row([frame_id], |row| {
+            Ok(FrameMetadata {
+                frame_id: row.get(0)?,
+                timestamp: row.get(1)?,
+                image_path: row.get(2)?,
+                app_name: row.get(3)?,
+                window_title: row.get(4)?,
+                ocr_text: row.get(5)?,
+            })
+        });
+
+        match result {
+            Ok(metadata) => Ok(Some(metadata)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(e.into()),
+        }
+    }
+
+    /// Get multiple frames by IDs (for search results)
+    pub fn get_frames_by_ids(&self, frame_ids: &[i64]) -> Result<Vec<FrameMetadata>> {
+        if frame_ids.is_empty() {
+            return Ok(vec![]);
+        }
+
+        // Create placeholders for SQL IN clause
+        let placeholders = frame_ids.iter()
+            .map(|_| "?")
+            .collect::<Vec<_>>()
+            .join(",");
+
+        let query = format!(
+            "SELECT f.id, f.timestamp, f.image_path, f.app_name, f.window_title, o.raw_text
+             FROM frames f
+             LEFT JOIN ocr_text o ON f.id = o.frame_id
+             WHERE f.id IN ({})
+             ORDER BY f.timestamp DESC",
+            placeholders
+        );
+
+        let mut stmt = self.conn.prepare(&query)?;
+        
+        let frames = stmt.query_map(
+            rusqlite::params_from_iter(frame_ids.iter()),
+            |row| {
+                Ok(FrameMetadata {
+                    frame_id: row.get(0)?,
+                    timestamp: row.get(1)?,
+                    image_path: row.get(2)?,
+                    app_name: row.get(3)?,
+                    window_title: row.get(4)?,
+                    ocr_text: row.get(5)?,
+                })
+            }
+        )?
+        .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(frames)
+    }
+
+    /// Get the most recent N frames
+    pub fn get_recent_frames(&self, limit: usize) -> Result<Vec<FrameMetadata>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT f.id, f.timestamp, f.image_path, f.app_name, f.window_title, o.raw_text
+             FROM frames f
+             LEFT JOIN ocr_text o ON f.id = o.frame_id
+             ORDER BY f.timestamp DESC
+             LIMIT ?1"
+        )?;
+
+        let frames = stmt.query_map([limit], |row| {
+            Ok(FrameMetadata {
+                frame_id: row.get(0)?,
+                timestamp: row.get(1)?,
+                image_path: row.get(2)?,
+                app_name: row.get(3)?,
+                window_title: row.get(4)?,
+                ocr_text: row.get(5)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(frames)
+    }
 }
 

@@ -9,8 +9,10 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.11",
     "@tauri-apps/api": "^2.0.0",
     "@tauri-apps/plugin-shell": "^2.0.0",
+    "lucide-react": "^0.555.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

@@ -20,8 +20,20 @@ pub struct ScreenRecorder {
 }
 
 impl ScreenRecorder {
+    /// Get a reference to the database
+    pub fn database(&self) -> &Database {
+        &self.database
+    }
+
+    /// Get a reference to the embedding model
+    pub fn embedding_model(&self) -> Option<&TextEmbedding> {
+        self.embedding_model.as_ref()
+    }
+}
+
+impl ScreenRecorder {
     /// Load embedding model files from cache directory
-    fn load_embedding_model_offline() -> Result<Option<TextEmbedding>> {
+    pub fn load_embedding_model_offline() -> Result<Option<TextEmbedding>> {
         println!("Initializing embedding model from local cache...");
         
         // Try multiple cache locations (cross-platform)

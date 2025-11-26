@@ -63,14 +63,39 @@ See [SECURITY.md](SECURITY.md) for detailed security considerations before using
 - Startup statistics showing total stored data
 - Indexed for query performance
 
+### Phase 4: The Recall (Complete)
+
+- Natural language semantic search using vector embeddings
+- Cosine similarity ranking of all stored frames
+- Top-20 results with similarity scores
+- `search_frames(query)` Tauri command for frontend
+- `get_recent_frames(limit)` for timeline view
+- `get_database_stats()` for app statistics
+- Efficient vector comparison in Rust
+- Full metadata joins (frames + OCR text)
+
+### Phase 5: The Face (Complete)
+
+- Modern dark-mode UI with Tailwind CSS
+- Cmd+K style search bar with keyboard shortcuts
+- Timeline slider for navigating history
+- Responsive masonry grid layout
+- Full-screen modal viewer for images + OCR text
+- TanStack Query for efficient data fetching
+- Real-time frame updates (5s polling)
+- Live statistics dashboard
+- Lucide React icons
+- Similarity score badges on search results
+
 ### How It Works
 
 1. **Capture**: The app monitors your primary display every 2 seconds
 2. **Smart Check**: Calculates a perceptual hash of the screen
 3. **Deduplication**: Only saves screenshots when the screen has changed
 4. **OCR**: Extracts text from the image using Tesseract
-5. **Embedding**: Generates semantic vectors for search (when model available)
-6. **Storage**: Saves as .webp (85% quality) to minimize disk usage
+5. **Embedding**: Generates semantic 384-dimensional vectors
+6. **Storage**: Saves .webp images + metadata/text/vectors to SQLite
+7. **Search**: Query in natural language, get ranked results by semantic similarity
 
 ## Installation
 
@@ -224,20 +249,30 @@ The database contains:
 - Small/blurry text may not be recognized accurately
 
 
+## API Reference
+
+### Tauri Commands (Callable from Frontend)
+
+```typescript
+// Search frames by semantic similarity
+await invoke<SearchResult[]>('search_frames', { query: 'code review' });
+
+// Get recent frames for timeline
+await invoke<FrameMetadata[]>('get_recent_frames', { limit: 50 });
+
+// Get database statistics
+await invoke<DatabaseStats>('get_database_stats');
+```
+
 ## Roadmap
 
-### Phase 4: The Recall (Search Logic)
-- [ ] Natural language search
-- [ ] Vector similarity matching
-- [ ] Top-N results
-
 ### Phase 5: The Face (UI Construction)
-- [ ] Timeline slider
-- [ ] Search bar (cmd+k style)
-- [ ] Grid view for results
-- [ ] Full screenshot viewer
+- [x] Timeline slider
+- [x] Search bar (cmd+k style)
+- [x] Grid view for results
+- [x] Full screenshot viewer
 
-### Phase 6: Privacy Guards
+### Phase 6: Privacy Guards (Next)
 - [ ] Window blacklist (incognito, password managers)
 - [ ] Configurable retention policy
 - [ ] Auto-delete old data
@@ -247,13 +282,22 @@ The database contains:
 ```
 sovereign/
 ├── src/                      # React frontend
-│   ├── App.tsx              # Main UI component
+│   ├── App.tsx              # Main UI component + TanStack Query
+│   ├── components/          # UI components
+│   │   ├── SearchBar.tsx    # Cmd+K search (keyboard shortcuts)
+│   │   ├── Timeline.tsx     # History slider
+│   │   ├── Grid.tsx         # Masonry layout for frames
+│   │   └── Modal.tsx        # Full image viewer
+│   ├── types.ts             # TypeScript definitions
 │   ├── main.tsx             # React entry point
 │   └── index.css            # Tailwind styles
 ├── src-tauri/
 │   ├── src/
-│   │   ├── main.rs          # Tauri app + auto-start logic
-│   │   ├── recorder.rs      # Core capture + OCR + embeddings
+│   │   ├── main.rs          # Tauri app + commands
+│   │   ├── recorder.rs      # Capture + OCR + embeddings
+│   │   ├── database.rs      # SQLite persistence
+│   │   ├── search.rs        # Cosine similarity search
+│   │   ├── commands.rs      # Tauri command handlers
 │   │   └── lib.rs           # Module declarations
 │   ├── Cargo.toml           # Rust dependencies
 │   └── tauri.conf.json      # Tauri configuration
