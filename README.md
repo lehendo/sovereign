@@ -67,7 +67,10 @@ See [SECURITY.md](SECURITY.md) for detailed security considerations before using
 ### Prerequisites
 
 **1. Node.js and Rust**
-- Node.js 18-21 (if using Node 22+, you may need to update Vite)
+- **Node.js 20.19+ or 22.12+** (LTS versions recommended)
+  - Node 21 and below are End-of-Life and not supported
+  - Check version: `node --version`
+  - Install from: https://nodejs.org/
 - Rust 1.70+
 - Xcode Command Line Tools (macOS)
 
@@ -172,9 +175,11 @@ Screenshots are saved to the platform-specific app data directory:
 ## Troubleshooting
 
 ### Blank white window on startup
-- **Cause**: Node.js version incompatibility with Vite
-- **Solution**: Using Node.js 18-21. If on Node 22+, run `npm install vite@latest`
-- **Note**: Current configuration supports Node.js 21 and below
+- **Cause**: Node.js version too old
+- **Solution**: Upgrade to Node.js 20.19+ or 22.12+ (LTS versions)
+  - Download from: https://nodejs.org/
+  - After upgrading: `rm -rf node_modules package-lock.json && npm install`
+- **Note**: Node 21 and earlier are End-of-Life and not supported
 
 ### "Tesseract not found"
 - Make sure Tesseract is installed and in your PATH
@@ -195,10 +200,6 @@ Screenshots are saved to the platform-specific app data directory:
 - Works best with clear, high-contrast text
 - Small/blurry text may not be recognized accurately
 
-### npm audit warnings
-- esbuild vulnerability (GHSA-67mh-4wv8-2f99) only affects dev server
-- Does not impact production builds
-- Can be safely ignored for development
 
 ## Roadmap
 
