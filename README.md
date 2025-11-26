@@ -185,12 +185,12 @@ When the app first runs, macOS will prompt for permissions:
 1. **Screen Recording Permission** (Required):
    - Click "Open System Settings" when prompted
    - Go to **System Settings > Privacy & Security > Screen Recording**
-   - Enable "Sovereign" (or "Cursor" if running in dev mode)
+   - Enable "Sovereign" (or your terminal/IDE if running in dev mode)
    - Restart the app
 
 2. **Accessibility Permission** (Required for Privacy Guard):
    - Go to **System Settings > Privacy & Security > Accessibility**
-   - Enable "Sovereign" (or "Cursor" if running in dev mode)
+   - Enable "Sovereign" (or your terminal/IDE if running in dev mode)
    - This allows the app to detect active window titles for blacklist checking
    - Restart the app after enabling
 
