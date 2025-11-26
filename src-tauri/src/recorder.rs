@@ -193,24 +193,38 @@ impl ScreenRecorder {
 
     /// Check if the current window should be blocked by privacy guard
     fn check_privacy_guard(&self) -> bool {
-        // Try to get the active window
-        match active_win_pos_rs::get_active_window() {
-            Ok(window) => {
-                let title = window.title;
-                
-                // Check if title contains any blacklisted term (case-insensitive)
-                for blocked_term in &self.blacklist {
-                    if title.to_lowercase().contains(&blocked_term.to_lowercase()) {
-                        println!("Privacy Guard triggered: Window title contains '{}'", blocked_term);
-                        println!("Skipping capture for: {}", title);
-                        return true;
+        // Wrap in catch_unwind to prevent crashes from native code panics
+        use std::panic;
+        
+        let result = panic::catch_unwind(panic::AssertUnwindSafe(|| {
+            match active_win_pos_rs::get_active_window() {
+                Ok(window) => {
+                    let title = window.title;
+                    
+                    // Check if title contains any blacklisted term (case-insensitive)
+                    for blocked_term in &self.blacklist {
+                        if title.to_lowercase().contains(&blocked_term.to_lowercase()) {
+                            println!("Privacy Guard triggered: Window title contains '{}'", blocked_term);
+                            println!("Skipping capture for: {}", title);
+                            return true;
+                        }
                     }
+                    false
                 }
-                false
+                Err(_) => {
+                    // If we can't determine the window, allow capture
+                    false
+                }
             }
+        }));
+
+        match result {
+            Ok(should_block) => should_block,
             Err(_) => {
-                eprintln!("Warning: Could not get active window");
-                // If we can't determine the window, allow capture
+                // If the native code panics, disable privacy guard for this capture
+                // and continue without crashing
+                eprintln!("Warning: Privacy Guard check failed (native code error)");
+                eprintln!("Continuing without window detection for this capture");
                 false
             }
         }
@@ -279,10 +293,11 @@ impl ScreenRecorder {
 
     /// Capture a single frame from the primary monitor
     pub async fn capture_frame(&mut self) -> Result<()> {
-        // Privacy Guard: Check if active window is blacklisted
-        if self.check_privacy_guard() {
-            return Ok(()); // Skip capture silently
-        }
+        // Privacy Guard: TEMPORARILY DISABLED due to crash on Intel Macs
+        // TODO: Replace active-win-pos-rs with a more stable alternative
+        // if self.check_privacy_guard() {
+        //     return Ok(()); // Skip capture silently
+        // }
 
         // Get all monitors and select the primary one
         let monitors = Monitor::all().context("Failed to get monitors")?;

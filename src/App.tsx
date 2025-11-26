@@ -26,7 +26,7 @@ function AppContent() {
   const { data: recentFrames = [], isLoading: isLoadingRecent } = useQuery<FrameMetadata[]>({
     queryKey: ["recentFrames"],
     queryFn: async () => {
-      return await invoke<FrameMetadata[]>("get_recent_frames_command", { limit: 50 });
+      return await invoke<FrameMetadata[]>("get_recent_frames", { limit: 50 });
     },
     refetchInterval: 5000, // Refresh every 5 seconds
   });
@@ -43,7 +43,7 @@ function AppContent() {
   // Search mutation
   const searchMutation = useMutation({
     mutationFn: async (query: string) => {
-      return await invoke<FrameMetadata[]>("search_frames_command", { query });
+      return await invoke<FrameMetadata[]>("search_frames", { query });
     },
     onSuccess: (data) => {
       setSearchResults(data);

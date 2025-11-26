@@ -77,3 +77,4 @@ export function Grid({ items, onItemClick }: GridProps) {
   );
 }
 
+

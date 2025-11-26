@@ -28,10 +28,10 @@ Sovereign requires screen recording permissions to function. This grants the app
 - **Storage location:** Screenshots are saved to your OS's application data directory
 - **No encryption:** Screenshots are currently stored as plain .webp files
 - **No access controls:** Any user on your system can read the screenshots
-- **Privacy Guards Active (Phase 6):** 
-  - Window blacklist prevents capture of password managers and private browsing
-  - Auto-deletion removes data older than 14 days
-  - See "Privacy Guards" section below
+- **Privacy Guards (Phase 6 - Partial):** 
+  - ⚠️ Window blacklist currently disabled due to crash on Intel Macs
+  - ✅ Auto-deletion removes data older than 14 days (fully functional)
+  - See "Privacy Guards" section below for details
 
 ### Recommendations
 
@@ -57,31 +57,40 @@ Sovereign requires screen recording permissions to function. This grants the app
    - Per-window privacy settings
    - User authentication for screenshot access
 
-## Privacy Guards (Phase 6 - Active)
+## Privacy Guards (Phase 6 - Partially Active)
 
-**Window Blacklist:**
-The app automatically skips recording when it detects sensitive applications:
+**Window Blacklist - ⚠️ Currently Disabled:**
+The window detection feature is **temporarily disabled** due to a critical crash bug:
+
+- **Issue**: The `active-win-pos-rs` library (v0.8.4) causes a `null pointer dereference` panic on Intel-based Macs
+- **Impact**: The panic cannot be caught or recovered from, causing the entire application to crash
+- **Root Cause**: Bug in the library's native macOS (AppKit) bindings when accessing window information
+- **Status**: Code is present but commented out in `src-tauri/src/recorder.rs` (lines 295-299)
+- **Workaround**: Manually quit the app when working with sensitive data (password managers, private browsing)
+- **Future**: Will be re-enabled when a stable cross-platform alternative is found
+
+**Planned Blacklist Terms** (when re-enabled):
 - Password Managers: Bitwarden, 1Password, KeePass, LastPass
 - Private Browsing: Incognito, InPrivate, Private Browsing
 - Privacy Tools: Tor Browser
 
-When a blacklisted window is detected, the capture is skipped and logged with "Privacy Guard triggered".
-
-**Auto-Deletion Policy:**
+**Auto-Deletion Policy - ✅ Fully Functional:**
 - Data older than 14 days is automatically deleted on app startup
 - Includes: Database records, OCR text, embeddings, and image files
 - Helps maintain privacy and manage storage space
+- Verified working on macOS, Windows, and Linux
 
 **Privacy Status UI:**
-- Green shield icon indicates Privacy Guard is active
+- Green shield icon displayed in UI (indicates privacy features present)
 - Statistics show current retention policy (14 days)
-- Visible confirmation that protections are in place
+- Visible confirmation that auto-deletion is active
 
 ## Known Limitations
 
-- Blacklist is currently hardcoded (user configuration planned for future)
+- **Window blacklist disabled** on Intel Macs due to `active-win-pos-rs` crash bug
 - No password protection on stored screenshots
 - No encryption at rest
+- Blacklist configuration is hardcoded (user configuration planned for future)
 - Timestamps in filenames could reveal user activity patterns
 - No per-window granular control (future feature)
 

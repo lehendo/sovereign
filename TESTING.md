@@ -79,14 +79,19 @@ Once the app is running:
 - Statistics showing: 0 frames initially
 - After a few captures, thumbnails appear in the grid
 
-### 6. Test Privacy Guard
+### 6. Privacy Guard Status
 
-To test the window blacklist:
+⚠️ **Note:** The window blacklist feature is **currently disabled** due to crashes on Intel-based Macs.
 
-1. Open **1Password** or **Bitwarden** (if installed)
-2. Check terminal - you should see: "Privacy Guard triggered"
-3. Or open **Chrome Incognito** window (Cmd+Shift+N)
-4. Terminal shows: "Skipping capture for: [window title]"
+**Why?**
+- The `active-win-pos-rs` library causes a `null pointer dereference` in macOS native code
+- The panic cannot be caught or recovered from, causing the entire app to crash
+- This is a known bug in the library's macOS bindings
+
+**Current Behavior:**
+- The app will capture all screens without filtering sensitive windows
+- Retention policy (14-day auto-delete) **still works correctly**
+- You can manually quit the app when working with sensitive data
 
 ### 7. Test Search
 
