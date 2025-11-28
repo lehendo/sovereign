@@ -142,7 +142,9 @@ See [SECURITY.md](SECURITY.md) for detailed security considerations before using
 
 4. **Run the app** and grant required permissions when prompted.
 
-**macOS Users - Required Permissions:**
+### Required Permissions
+
+#### macOS
 
 When the app first runs, macOS will prompt for permissions:
 
@@ -157,6 +159,45 @@ When the app first runs, macOS will prompt for permissions:
    - Enable "Sovereign"
    - This allows the app to detect active window titles for blacklist checking
    - Restart the app after enabling
+
+#### Windows
+
+Windows may prompt for permissions on first run:
+
+1. **Screen Recording Permission** (Required):
+   - Windows 10/11 will typically prompt automatically when the app first attempts screen capture
+   - If prompted, click "Yes" to allow screen recording
+   - You may need to grant permission in **Settings > Privacy > Screen recording** (Windows 11)
+
+2. **Window Detection** (For Privacy Guard):
+   - No special permissions required
+   - Uses PowerShell with Win32 API (works automatically)
+
+#### Linux
+
+Linux requirements depend on your desktop environment:
+
+1. **Screen Recording Permission** (Required):
+   - **X11**: Usually works automatically, but may require X11 permissions
+   - **Wayland**: May require specific permissions depending on your compositor
+     - **GNOME**: May need to grant permission in Settings
+     - **KDE**: Usually works automatically
+   - If screen capture fails, ensure your user has access to the X server or Wayland session
+
+2. **Window Detection** (For Privacy Guard):
+   - Requires `xdotool` to be installed:
+     ```bash
+     # Ubuntu/Debian
+     sudo apt-get install xdotool
+     
+     # Fedora
+     sudo dnf install xdotool
+     
+     # Arch Linux
+     sudo pacman -S xdotool
+     ```
+   - **X11**: Works automatically once xdotool is installed
+   - **Wayland**: Window detection may be limited (xdotool primarily supports X11)
 
 ### Development (Build from Source)
 
@@ -246,10 +287,23 @@ The database contains:
 - Small/blurry text may not be recognized accurately
 
 ### Privacy Guard not working
-- Ensure Accessibility permission is enabled (see macOS Permissions above)
+
+**macOS:**
+- Ensure Accessibility permission is enabled (see Required Permissions above)
 - Check terminal output for "[Privacy Guard] Failed to get active window" messages
 - Restart the app after enabling Accessibility permission
 - Privacy Guard requires both Screen Recording and Accessibility permissions
+
+**Windows:**
+- Window detection should work automatically
+- If Privacy Guard fails, check that PowerShell is available and working
+- Ensure the app has necessary permissions to query window information
+
+**Linux:**
+- Ensure `xdotool` is installed (see Required Permissions above)
+- On X11: Window detection should work automatically once xdotool is installed
+- On Wayland: Window detection may be limited (xdotool primarily supports X11)
+- Check terminal output for error messages related to xdotool
 
 ## API Reference
 
