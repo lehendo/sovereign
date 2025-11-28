@@ -89,43 +89,86 @@ See [SECURITY.md](SECURITY.md) for detailed security considerations before using
 
 ## Installation
 
-### Prerequisites
+### Quick Start (End Users)
 
-**1. Node.js and Rust**
+1. **Download** the latest release from [GitHub Releases](https://github.com/lehendo/sovereign/releases/latest)
+   - **macOS**: Download `.dmg` file, open and drag to Applications
+   - **Windows**: Download `.exe` installer and run
+   - **Linux**: Download `.deb` or `.AppImage` file
+
+2. **Install Tesseract OCR** (Required for text extraction):
+
+   **macOS:**
+   ```bash
+   brew install tesseract
+   ```
+
+   **Windows:**
+   Download from: https://github.com/UB-Mannheim/tesseract/wiki  
+   Add Tesseract to your PATH.
+
+   **Linux (Ubuntu/Debian):**
+   ```bash
+   sudo apt-get update
+   sudo apt-get install tesseract-ocr
+   ```
+
+3. **(Optional) Download Embedding Model** for semantic search:
+   
+   The app works without embeddings (OCR-only mode). For semantic search, download the model:
+
+   **macOS/Linux:**
+   ```bash
+   mkdir -p ~/.cache/huggingface/hub/models--Qdrant--all-MiniLM-L6-v2-onnx/snapshots/main
+   cd ~/.cache/huggingface/hub/models--Qdrant--all-MiniLM-L6-v2-onnx/snapshots/main
+   curl -L -o model.onnx "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/model.onnx?download=true"
+   curl -L -o tokenizer.json "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/tokenizer.json?download=true"
+   curl -L -o config.json "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/config.json?download=true"
+   curl -L -o special_tokens_map.json "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/special_tokens_map.json?download=true"
+   curl -L -o tokenizer_config.json "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/tokenizer_config.json?download=true"
+   ```
+
+   **Windows (PowerShell):**
+   ```powershell
+   $cacheDir = "$env:LOCALAPPDATA\huggingface\hub\models--Qdrant--all-MiniLM-L6-v2-onnx\snapshots\main"
+   New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
+   Set-Location $cacheDir
+   Invoke-WebRequest -Uri "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/model.onnx?download=true" -OutFile "model.onnx"
+   Invoke-WebRequest -Uri "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/tokenizer.json?download=true" -OutFile "tokenizer.json"
+   Invoke-WebRequest -Uri "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/config.json?download=true" -OutFile "config.json"
+   Invoke-WebRequest -Uri "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/special_tokens_map.json?download=true" -OutFile "special_tokens_map.json"
+   Invoke-WebRequest -Uri "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/tokenizer_config.json?download=true" -OutFile "tokenizer_config.json"
+   ```
+
+4. **Run the app** and grant required permissions when prompted.
+
+**macOS Users - Required Permissions:**
+
+When the app first runs, macOS will prompt for permissions:
+
+1. **Screen Recording Permission** (Required):
+   - Click "Open System Settings" when prompted
+   - Go to **System Settings > Privacy & Security > Screen Recording**
+   - Enable "Sovereign"
+   - Restart the app
+
+2. **Accessibility Permission** (Required for Privacy Guard):
+   - Go to **System Settings > Privacy & Security > Accessibility**
+   - Enable "Sovereign"
+   - This allows the app to detect active window titles for blacklist checking
+   - Restart the app after enabling
+
+### Development (Build from Source)
+
+For contributors and developers who want to build from source:
+
+**Prerequisites:**
 - **Node.js 20.19+ or 22.12+** (LTS versions recommended)
-  - Check version: `node --version`
-  - Install from: https://nodejs.org/
-- Rust 1.70+
-- Xcode Command Line Tools (macOS)
+- **Rust 1.70+**
+- **Xcode Command Line Tools** (macOS)
+- **Tesseract OCR** (see Quick Start section above)
 
-**2. Tesseract OCR**
-
-Required for text extraction.
-
-#### macOS
-```bash
-brew install tesseract
-```
-
-#### Windows
-Download from: https://github.com/UB-Mannheim/tesseract/wiki
-
-Add Tesseract to your PATH.
-
-#### Linux (Ubuntu/Debian)
-```bash
-sudo apt-get update
-sudo apt-get install tesseract-ocr
-```
-
-#### Verify Installation
-```bash
-tesseract --version
-```
-
-You should see version 4.0 or higher.
-
-### Setup
+**Setup:**
 
 1. Clone the repository:
 ```bash
@@ -138,65 +181,14 @@ cd sovereign
 npm install
 ```
 
-3. (Optional) Download embedding model for semantic search:
-
-**Note**: The app works perfectly without embeddings (OCR only). Embeddings enable semantic search features.
-
-#### Linux / macOS
-
-```bash
-# Create cache directory
-mkdir -p ~/.cache/huggingface/hub/models--Qdrant--all-MiniLM-L6-v2-onnx/snapshots/main
-cd ~/.cache/huggingface/hub/models--Qdrant--all-MiniLM-L6-v2-onnx/snapshots/main
-
-# Download model files (90MB total)
-curl -L -o model.onnx "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/model.onnx?download=true"
-curl -L -o tokenizer.json "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/tokenizer.json?download=true"
-curl -L -o config.json "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/config.json?download=true"
-curl -L -o special_tokens_map.json "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/special_tokens_map.json?download=true"
-curl -L -o tokenizer_config.json "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/tokenizer_config.json?download=true"
-```
-
-#### Windows (PowerShell)
-
-```powershell
-# The app looks in %LOCALAPPDATA% on Windows
-$cacheDir = "$env:LOCALAPPDATA\huggingface\hub\models--Qdrant--all-MiniLM-L6-v2-onnx\snapshots\main"
-New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
-Set-Location $cacheDir
-
-# Download model files (90MB total)
-Invoke-WebRequest -Uri "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/model.onnx?download=true" -OutFile "model.onnx"
-Invoke-WebRequest -Uri "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/tokenizer.json?download=true" -OutFile "tokenizer.json"
-Invoke-WebRequest -Uri "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/config.json?download=true" -OutFile "config.json"
-Invoke-WebRequest -Uri "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/special_tokens_map.json?download=true" -OutFile "special_tokens_map.json"
-Invoke-WebRequest -Uri "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/tokenizer_config.json?download=true" -OutFile "tokenizer_config.json"
-
-Write-Host "Model files downloaded to: $cacheDir"
-```
+3. (Optional) Download embedding model (see Quick Start section above)
 
 4. Run development server:
 ```bash
 npm run tauri dev
 ```
 
-**macOS Users - Required Permissions:**
-
-When the app first runs, macOS will prompt for permissions:
-
-1. **Screen Recording Permission** (Required):
-   - Click "Open System Settings" when prompted
-   - Go to **System Settings > Privacy & Security > Screen Recording**
-   - Enable "Sovereign" (or your terminal/IDE if running in dev mode)
-   - Restart the app
-
-2. **Accessibility Permission** (Required for Privacy Guard):
-   - Go to **System Settings > Privacy & Security > Accessibility**
-   - Enable "Sovereign" (or your terminal/IDE if running in dev mode)
-   - This allows the app to detect active window titles for blacklist checking
-   - Restart the app after enabling
-
-### Build for Production
+**Build for Production:**
 
 ```bash
 npm run tauri build
