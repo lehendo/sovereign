@@ -1,6 +1,6 @@
 # Sovereign
 
-**Privacy-First Screen Memory Tool**
+**Privacy-First Screen Memory Desktop Application**
 
 A high-performance, local-only screen recording and search system. Runs continuously without draining battery or consuming excessive memory.
 
