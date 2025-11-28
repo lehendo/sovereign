@@ -6,13 +6,11 @@ use crate::database::Database;
 use crate::search::{cosine_similarity, FrameMetadata, SearchResult};
 use fastembed::TextEmbedding;
 
-/// Shared application state
 pub struct AppState {
     pub database: Arc<Mutex<Database>>,
     pub embedding_model: Arc<Mutex<Option<TextEmbedding>>>,
 }
 
-/// Search frames using natural language query
 #[tauri::command]
 pub async fn search_frames(
     query: String,
@@ -24,18 +22,15 @@ pub async fn search_frames(
         return Ok(vec![]);
     }
 
-    // Validate and sanitize query input
     let query = query.trim();
     if query.is_empty() {
         return Ok(vec![]);
     }
     
-    // Limit query length to prevent DoS
     if query.len() > 1000 {
         return Err("Query too long. Maximum 1000 characters.".to_string());
     }
 
-    // Generate query embedding
     let embedding_model = state.embedding_model.lock()
         .map_err(|_| "Database lock error".to_string())?;
     let query_vector = match embedding_model.as_ref() {
@@ -54,7 +49,6 @@ pub async fn search_frames(
 
     println!("Query embedding generated ({} dimensions)", query_vector.len());
 
-    // Fetch all embeddings from database
     let db = state.database.lock()
         .map_err(|_| "Database lock error".to_string())?;
     let all_embeddings = db
@@ -67,7 +61,6 @@ pub async fn search_frames(
         return Ok(vec![]);
     }
 
-    // Calculate similarity scores for all embeddings
     let mut scores: Vec<(i64, f32)> = all_embeddings
         .iter()
         .map(|(frame_id, vector)| {
@@ -76,15 +69,12 @@ pub async fn search_frames(
         })
         .collect();
 
-    // Sort by score descending
     scores.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
-    // Take top 20 results
     let top_results: Vec<(i64, f32)> = scores.into_iter().take(20).collect();
 
     println!("Top {} results found", top_results.len());
 
-    // Fetch metadata for top results
     let frame_ids: Vec<i64> = top_results.iter().map(|(id, _)| *id).collect();
     let frames = db
         .get_frames_by_ids(&frame_ids)
@@ -92,11 +82,9 @@ pub async fn search_frames(
 
     drop(db);
 
-    // Build search results with scores
     let mut results: Vec<SearchResult> = frames
         .into_iter()
         .filter_map(|frame| {
-            // Find the score for this frame
             let score = top_results
                 .iter()
                 .find(|(id, _)| *id == frame.frame_id)
@@ -113,7 +101,6 @@ pub async fn search_frames(
         })
         .collect();
 
-    // Sort by score again (in case DB didn't return in order)
     results.sort_by(|a, b| {
         b.similarity_score
             .partial_cmp(&a.similarity_score)
@@ -129,13 +116,11 @@ pub async fn search_frames(
     Ok(results)
 }
 
-/// Get the most recent N frames for timeline view
 #[tauri::command]
 pub async fn get_recent_frames(
     limit: usize,
     state: State<'_, AppState>,
 ) -> Result<Vec<FrameMetadata>, String> {
-    // Validate limit to prevent DoS
     let limit = limit.min(1000);
     
     let db = state.database.lock()
@@ -150,7 +135,6 @@ pub async fn get_recent_frames(
     Ok(frames)
 }
 
-/// Get database statistics
 #[tauri::command]
 pub async fn get_database_stats(
     state: State<'_, AppState>,

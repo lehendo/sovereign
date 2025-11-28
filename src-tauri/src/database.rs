@@ -9,9 +9,7 @@ pub struct Database {
 }
 
 impl Database {
-    /// Initialize the database and create tables if they don't exist
     pub fn new(db_path: PathBuf) -> Result<Self> {
-        // Create parent directory if it doesn't exist
         if let Some(parent) = db_path.parent() {
             std::fs::create_dir_all(parent)
                 .context("Failed to create database directory")?;
@@ -27,9 +25,7 @@ impl Database {
         Ok(db)
     }
 
-    /// Create the database schema
     fn create_tables(&self) -> Result<()> {
-        // Table: frames
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS frames (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,7 +39,6 @@ impl Database {
             [],
         )?;
 
-        // Table: ocr_text
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS ocr_text (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,7 +50,6 @@ impl Database {
             [],
         )?;
 
-        // Table: embeddings
         self.conn.execute(
             "CREATE TABLE IF NOT EXISTS embeddings (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,7 +61,6 @@ impl Database {
             [],
         )?;
 
-        // Create indices for performance
         self.conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_frames_timestamp ON frames(timestamp)",
             [],
@@ -87,7 +80,6 @@ impl Database {
         Ok(())
     }
 
-    /// Insert a new frame and return its ID
     pub fn insert_frame(
         &self,
         timestamp: u64,
@@ -105,7 +97,6 @@ impl Database {
         Ok(self.conn.last_insert_rowid())
     }
 
-    /// Insert OCR text for a frame
     pub fn insert_ocr_text(&self, frame_id: i64, raw_text: &str) -> Result<()> {
         self.conn.execute(
             "INSERT INTO ocr_text (frame_id, raw_text) VALUES (?1, ?2)",
@@ -115,9 +106,7 @@ impl Database {
         Ok(())
     }
 
-    /// Insert embedding vector for a frame
     pub fn insert_embedding(&self, frame_id: i64, vector: &[f32]) -> Result<()> {
-        // Serialize vector to bytes using bincode
         let vector_bytes = bincode::serialize(vector)
             .context("Failed to serialize embedding vector")?;
 
@@ -129,7 +118,6 @@ impl Database {
         Ok(())
     }
 
-    /// Get total number of frames
     pub fn get_frame_count(&self) -> Result<i64> {
         let count: i64 = self.conn.query_row(
             "SELECT COUNT(*) FROM frames",
@@ -140,7 +128,6 @@ impl Database {
         Ok(count)
     }
 
-    /// Get database statistics
     pub fn get_stats(&self) -> Result<DatabaseStats> {
         let frame_count: i64 = self.conn.query_row(
             "SELECT COUNT(*) FROM frames",
@@ -176,7 +163,6 @@ impl Database {
     }
 }
 
-/// Database statistics
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct DatabaseStats {
     pub total_frames: i64,
@@ -187,7 +173,6 @@ pub struct DatabaseStats {
 }
 
 impl Database {
-    /// Fetch all embeddings (frame_id and vector) for similarity search
     pub fn get_all_embeddings(&self) -> Result<Vec<(i64, Vec<f32>)>> {
         let mut stmt = self.conn.prepare(
             "SELECT frame_id, vector FROM embeddings"
@@ -197,7 +182,6 @@ impl Database {
             let frame_id: i64 = row.get(0)?;
             let vector_blob: Vec<u8> = row.get(1)?;
             
-            // Deserialize the vector from bincode
             let vector: Vec<f32> = bincode::deserialize(&vector_blob)
                 .map_err(|e| rusqlite::Error::FromSqlConversionFailure(
                     1,
@@ -212,7 +196,6 @@ impl Database {
         Ok(embeddings)
     }
 
-    /// Get frame metadata by ID
     pub fn get_frame_by_id(&self, frame_id: i64) -> Result<Option<FrameMetadata>> {
         let mut stmt = self.conn.prepare(
             "SELECT f.id, f.timestamp, f.image_path, f.app_name, f.window_title, o.raw_text
@@ -239,13 +222,11 @@ impl Database {
         }
     }
 
-    /// Get multiple frames by IDs (for search results)
     pub fn get_frames_by_ids(&self, frame_ids: &[i64]) -> Result<Vec<FrameMetadata>> {
         if frame_ids.is_empty() {
             return Ok(vec![]);
         }
 
-        // Create placeholders for SQL IN clause
         let placeholders = frame_ids.iter()
             .map(|_| "?")
             .collect::<Vec<_>>()
@@ -280,7 +261,6 @@ impl Database {
         Ok(frames)
     }
 
-    /// Get the most recent N frames
     pub fn get_recent_frames(&self, limit: usize) -> Result<Vec<FrameMetadata>> {
         let mut stmt = self.conn.prepare(
             "SELECT f.id, f.timestamp, f.image_path, f.app_name, f.window_title, o.raw_text
@@ -305,12 +285,9 @@ impl Database {
         Ok(frames)
     }
 
-    /// Prune old data from the database and delete files from disk
-    /// Deletes frames older than the specified number of days
     pub fn prune_old_data(&self, days: i64) -> Result<usize> {
         use std::time::{SystemTime, UNIX_EPOCH};
 
-        // Validate days parameter to prevent DoS
         if days < 0 || days > 365 {
             return Err(anyhow::anyhow!("Invalid retention period: must be between 0 and 365 days"));
         }
@@ -322,7 +299,6 @@ impl Database {
 
         let cutoff_timestamp = current_timestamp - (days * 24 * 60 * 60);
 
-        // First, fetch all image paths that will be deleted
         let mut stmt = self.conn.prepare(
             "SELECT image_path FROM frames WHERE timestamp < ?1"
         )?;
@@ -332,25 +308,20 @@ impl Database {
         })?
         .collect::<Result<Vec<_>, _>>()?;
 
-        // Delete from database (cascades to ocr_text and embeddings)
         let deleted_count = self.conn.execute(
             "DELETE FROM frames WHERE timestamp < ?1",
             params![cutoff_timestamp],
         )?;
 
-        // Delete image files from disk with path validation
         let mut files_deleted = 0;
         for path_str in paths {
             let path = PathBuf::from(&path_str);
             
-            // Security: Validate path to prevent directory traversal
-            // Only allow deletion of files within expected screenshot directories
             if path_str.contains("..") || path_str.contains("//") {
                 eprintln!("Warning: Skipping suspicious path: {}", path_str);
                 continue;
             }
             
-            // Additional validation: ensure path is a file (not a directory)
             if path.is_file() {
                 if let Err(e) = std::fs::remove_file(&path) {
                     eprintln!("Warning: Could not delete file {}: {}", path_str, e);

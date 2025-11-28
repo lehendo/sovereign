@@ -10,7 +10,6 @@ export function SearchBar({ onSearch, isLoading }: SearchBarProps) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
 
-  // Cmd+K to open search
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -35,7 +34,6 @@ export function SearchBar({ onSearch, isLoading }: SearchBarProps) {
 
   return (
     <>
-      {/* Search trigger button */}
       <button
         onClick={() => setIsOpen(true)}
         className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg border border-gray-700 transition-colors"
@@ -48,7 +46,6 @@ export function SearchBar({ onSearch, isLoading }: SearchBarProps) {
         </div>
       </button>
 
-      {/* Search modal */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-start justify-center pt-20"

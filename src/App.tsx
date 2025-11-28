@@ -25,16 +25,14 @@ function AppContent() {
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [timelineRange, setTimelineRange] = useState<{ start: number; end: number } | null>(null);
 
-  // Fetch recent frames on load
   const { data: recentFrames = [], isLoading: isLoadingRecent } = useQuery<FrameMetadata[]>({
     queryKey: ["recentFrames"],
     queryFn: async () => {
       return await invoke<FrameMetadata[]>("get_recent_frames", { limit: 50 });
     },
-    refetchInterval: 5000, // Refresh every 5 seconds
+    refetchInterval: 5000,
   });
 
-  // Fetch database stats
   const { data: stats } = useQuery<DatabaseStats>({
     queryKey: ["databaseStats"],
     queryFn: async () => {
@@ -43,7 +41,6 @@ function AppContent() {
     refetchInterval: 10000,
   });
 
-  // Search mutation
   const searchMutation = useMutation({
     mutationFn: async (query: string) => {
       return await invoke<FrameMetadata[]>("search_frames", { query });
@@ -93,7 +90,6 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      {/* Header */}
       <header className="border-b border-gray-800 bg-gray-900/60 backdrop-blur sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4">
@@ -147,10 +143,8 @@ function AppContent() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <div className="grid lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
           <aside className="lg:col-span-1 space-y-4">
             <UpdateBanner />
             <Timeline
@@ -161,7 +155,6 @@ function AppContent() {
               onRangeChange={handleTimelineChange}
             />
 
-            {/* Privacy Guard Card */}
             <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Shield className="w-4 h-4 text-green-500" />
@@ -175,7 +168,6 @@ function AppContent() {
               </div>
             </div>
 
-            {/* Stats Card */}
             {stats && (
               <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
                 <h3 className="text-sm font-semibold text-gray-300 mb-3">Statistics</h3>
@@ -201,7 +193,6 @@ function AppContent() {
             )}
           </aside>
 
-          {/* Grid */}
           <div className="lg:col-span-3">
             {isSearchMode && (
               <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
@@ -226,7 +217,6 @@ function AppContent() {
         </div>
       </main>
 
-      {/* Modal */}
       {selectedFrame && (
         <Modal
           isOpen={!!selectedFrame}

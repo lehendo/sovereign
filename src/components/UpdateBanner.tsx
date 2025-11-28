@@ -11,7 +11,6 @@ export function UpdateBanner() {
 
   useEffect(() => {
     void handleCheckForUpdate(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCheckForUpdate = async (silent = false) => {

@@ -37,7 +37,6 @@ export function Grid({ items, onItemClick }: GridProps) {
             onClick={() => onItemClick(item)}
             className="group relative bg-gray-800 rounded-lg overflow-hidden border border-gray-700 hover:border-blue-500 cursor-pointer transition-all hover:scale-105"
           >
-            {/* Thumbnail */}
             <div className="aspect-video bg-gray-900 relative">
               <img
                 src={imageSrc}
@@ -46,13 +45,11 @@ export function Grid({ items, onItemClick }: GridProps) {
                 loading="lazy"
               />
               
-              {/* Overlay on hover */}
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <ImageIcon className="w-8 h-8 text-white" />
               </div>
             </div>
 
-            {/* Metadata */}
             <div className="p-3 space-y-1">
               <div className="flex items-center justify-between text-xs text-gray-400">
                 <span>{date.toLocaleTimeString()}</span>

@@ -34,7 +34,6 @@ export function Modal({
         className="w-full max-w-7xl bg-gray-900 rounded-xl border border-gray-700 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-800">
           <div className="flex items-center gap-3">
             <Hash className="w-4 h-4 text-gray-400" />
@@ -57,10 +56,8 @@ export function Modal({
           </button>
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-auto">
           <div className="grid md:grid-cols-2 gap-4 p-4">
-            {/* Image */}
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-gray-300 flex items-center gap-2">
                 Screenshot
@@ -75,7 +72,6 @@ export function Modal({
               <p className="text-xs text-gray-500 break-all">{imagePath}</p>
             </div>
 
-            {/* OCR Text */}
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-gray-300 flex items-center gap-2">
                 <FileText className="w-4 h-4" />

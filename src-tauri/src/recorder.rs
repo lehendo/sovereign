@@ -24,29 +24,21 @@ pub struct ScreenRecorder {
 }
 
 impl ScreenRecorder {
-    /// Get a reference to the database
     pub fn database(&self) -> &Database {
         &self.database
     }
 
-    /// Get a reference to the embedding model
     pub fn embedding_model(&self) -> Option<&TextEmbedding> {
         self.embedding_model.as_ref()
     }
 }
 
 impl ScreenRecorder {
-    /// Load embedding model files from cache directory
     pub fn load_embedding_model_offline() -> Result<Option<TextEmbedding>> {
         println!("Initializing embedding model from local cache...");
         
-        // Try multiple cache locations (cross-platform)
         let possible_cache_dirs = vec![
-            // Windows: %LOCALAPPDATA%\huggingface (C:\Users\Name\AppData\Local\huggingface)
-            // macOS: ~/Library/Caches/huggingface
-            // Linux: ~/.cache/huggingface
             dirs::cache_dir().map(|c| c.join("huggingface")),
-            // Fallback for Linux if cache_dir doesn't work
             dirs::home_dir().map(|h| h.join(".cache").join("huggingface")),
         ];
 
@@ -85,14 +77,12 @@ impl ScreenRecorder {
             }
         };
 
-        // Load required model files
         let model_path = cache_dir.join("model.onnx");
         let tokenizer_path = cache_dir.join("tokenizer.json");
         let config_path = cache_dir.join("config.json");
         let special_tokens_path = cache_dir.join("special_tokens_map.json");
         let tokenizer_config_path = cache_dir.join("tokenizer_config.json");
 
-        // Check if all required files exist
         if !model_path.exists() || !tokenizer_path.exists() || !config_path.exists() 
             || !special_tokens_path.exists() || !tokenizer_config_path.exists() {
             eprintln!("Warning: Missing model files in cache directory");
@@ -102,7 +92,6 @@ impl ScreenRecorder {
             return Ok(None);
         }
 
-        // Read files into memory
         println!("Loading model files from: {}", cache_dir.display());
         let model_bytes = std::fs::read(&model_path)
             .context("Failed to read model.onnx")?;
@@ -122,7 +111,6 @@ impl ScreenRecorder {
         println!("  - special_tokens_map.json: {} bytes", special_tokens_bytes.len());
         println!("  - tokenizer_config.json: {} bytes", tokenizer_config_bytes.len());
 
-        // Construct TokenizerFiles
         let tokenizer_files = fastembed::TokenizerFiles {
             tokenizer_file: tokenizer_bytes,
             config_file: config_bytes,
@@ -130,10 +118,8 @@ impl ScreenRecorder {
             tokenizer_config_file: tokenizer_config_bytes,
         };
 
-        // Construct UserDefinedEmbeddingModel using the constructor
         let user_model = UserDefinedEmbeddingModel::new(model_bytes, tokenizer_files);
 
-        // Initialize TextEmbedding from user-defined model
         match TextEmbedding::try_new_from_user_defined(user_model, Default::default()) {
             Ok(model) => {
                 println!("Embedding model initialized successfully (offline mode)");
@@ -147,14 +133,12 @@ impl ScreenRecorder {
         }
     }
 
-    /// Create a new ScreenRecorder instance
     pub fn new(app_handle: AppHandle) -> Result<Self> {
         let hasher = HasherConfig::new()
             .hash_size(16, 16)
             .preproc_dct()
             .to_hasher();
 
-        // Initialize database
         let db_path = app_handle
             .path()
             .app_data_dir()
@@ -163,7 +147,6 @@ impl ScreenRecorder {
 
         let database = Database::new(db_path)?;
 
-        // Load embedding model from cache (offline)
         let embedding_model = Self::load_embedding_model_offline()
             .unwrap_or_else(|e| {
                 eprintln!("Error loading embedding model: {:#}", e);
@@ -171,7 +154,6 @@ impl ScreenRecorder {
                 None
             });
 
-        // Initialize privacy blacklist
         let blacklist = vec![
             "Incognito".to_string(),
             "Private".to_string(),
@@ -180,11 +162,11 @@ impl ScreenRecorder {
             "1Password".to_string(),
             "KeePass".to_string(),
             "LastPass".to_string(),
-            "InPrivate".to_string(), // Edge private mode
-            "Private Browsing".to_string(), // Firefox/Safari
-            "Private Window".to_string(), // Safari
-            "New Incognito Window".to_string(), // Chrome
-            "Incognito Window".to_string(), // Chrome variant
+            "InPrivate".to_string(),
+            "Private Browsing".to_string(),
+            "Private Window".to_string(),
+            "New Incognito Window".to_string(),
+            "Incognito Window".to_string(),
         ];
 
         Ok(Self {
@@ -197,14 +179,11 @@ impl ScreenRecorder {
         })
     }
 
-    /// Check if the current window should be blocked by privacy guard
-    /// Uses native system commands for maximum stability
     fn check_privacy_guard(&self) -> bool {
         let window_title = self.get_active_window_title();
         
         match window_title {
             Some(title) => {
-                // Check if title contains any blacklisted term (case-insensitive)
                 let title_lower = title.to_lowercase();
                 for blocked_term in &self.blacklist {
                     let term_lower = blocked_term.to_lowercase();
@@ -214,26 +193,20 @@ impl ScreenRecorder {
                         return true;
                     }
                 }
-                // If no match, allow capture
                 false
             }
             None => {
-                // If we can't detect the window, log it but allow capture
-                // (Better to capture than to block everything if detection fails)
                 eprintln!("[Privacy Guard] Could not detect active window - allowing capture");
                 false
             }
         }
     }
     
-    /// Get the active window title using native system commands
-    /// This is more stable than FFI libraries and won't crash
     fn get_active_window_title(&self) -> Option<String> {
         #[cfg(target_os = "macos")]
         {
             use std::process::Command;
             
-            // Use AppleScript to get the frontmost app and window title
             let output = Command::new("osascript")
                 .arg("-e")
                 .arg(r#"tell application "System Events" to get name of first process whose frontmost is true"#)
@@ -243,8 +216,6 @@ impl ScreenRecorder {
                 if output.status.success() {
                     let app_name = String::from_utf8_lossy(&output.stdout).trim().to_string();
                     
-                    // Also try to get the window title
-                    // Sanitize app_name to prevent command injection
                     let sanitized_app_name = app_name
                         .replace('"', "")
                         .replace('\n', "")
@@ -262,22 +233,18 @@ impl ScreenRecorder {
                     if let Ok(window_output) = window_output {
                         if window_output.status.success() {
                             let window_title = String::from_utf8_lossy(&window_output.stdout).trim().to_string();
-                            // Return combined app name and window title for better matching
                             let full_title = format!("{} - {}", app_name, window_title);
                             println!("[Privacy Guard] Detected window: {}", full_title);
                             return Some(full_title);
                         } else {
-                            // Window title failed, but we have app name
                             println!("[Privacy Guard] Detected app: {} (window title unavailable)", app_name);
                             return Some(app_name);
                         }
                     } else {
-                        // Window title command failed, but we have app name
                         println!("[Privacy Guard] Detected app: {} (window title unavailable)", app_name);
                         return Some(app_name);
                     }
                 } else {
-                    // Failed to get app name - likely missing Accessibility permission
                     let error = String::from_utf8_lossy(&output.stderr);
                     eprintln!("[Privacy Guard] Failed to get active window: {}", error);
                     eprintln!("[Privacy Guard] This usually means Accessibility permission is not granted");
@@ -292,7 +259,6 @@ impl ScreenRecorder {
         
         #[cfg(target_os = "windows")]
         {
-            // Windows implementation using PowerShell
             use std::process::Command;
             
             let output = Command::new("powershell")
@@ -311,7 +277,6 @@ impl ScreenRecorder {
         
         #[cfg(target_os = "linux")]
         {
-            // Linux implementation using xdotool
             use std::process::Command;
             
             let output = Command::new("xdotool")
@@ -329,7 +294,6 @@ impl ScreenRecorder {
         }
     }
 
-    /// Get the screenshots directory path using Tauri's AppData
     fn get_screenshots_dir(&self) -> Result<PathBuf> {
         let app_data_dir = self
             .app_handle
@@ -339,7 +303,6 @@ impl ScreenRecorder {
 
         let screenshots_dir = app_data_dir.join("screenshots");
 
-        // Create directory if it doesn't exist
         if !screenshots_dir.exists() {
             std::fs::create_dir_all(&screenshots_dir)
                 .context("Failed to create screenshots directory")?;
@@ -348,9 +311,7 @@ impl ScreenRecorder {
         Ok(screenshots_dir)
     }
 
-    /// Extract text from image using OCR
     fn extract_text_from_image(&self, img: &DynamicImage) -> Result<String> {
-        // Create a unique temp file with exclusive access to avoid TOCTOU issues
         let temp_file = NamedTempFile::new()
             .context("Failed to create temporary file for OCR")?;
         let temp_path = temp_file.into_temp_path();
@@ -358,12 +319,10 @@ impl ScreenRecorder {
         img.save(&temp_path)
             .context("Failed to write temporary image for OCR")?;
 
-        // Configure Tesseract
         let mut args = Args::default();
         args.lang = "eng".to_string();
         args.dpi = Some(300);
 
-        // Perform OCR
         let ocr_image = TesseractImage::from_path(&temp_path)
             .context("Failed to load image for OCR")?;
         
@@ -377,7 +336,6 @@ impl ScreenRecorder {
         Ok(text.trim().to_string())
     }
 
-    /// Generate embedding vector from text
     fn generate_embedding(&self, text: &str) -> Result<Vec<f32>> {
         if text.is_empty() {
             return Ok(vec![]);
@@ -394,29 +352,23 @@ impl ScreenRecorder {
         Ok(embeddings.into_iter().next().unwrap_or_default())
     }
 
-    /// Capture a single frame from the primary monitor
     pub async fn capture_frame(&mut self) -> Result<()> {
-        // Privacy Guard: Check if active window is blacklisted
         if self.check_privacy_guard() {
-            return Ok(()); // Skip capture silently
+            return Ok(());
         }
 
-        // Get all monitors and select the primary one
         let monitors = Monitor::all().context("Failed to get monitors")?;
         let primary_monitor = monitors
             .into_iter()
             .find(|m| m.is_primary())
             .context("No primary monitor found")?;
 
-        // Capture the screen
         let buffer = primary_monitor
             .capture_image()
             .context("Failed to capture screen")?;
 
-        // Convert to DynamicImage
         let mut img = DynamicImage::ImageRgba8(buffer);
 
-        // Resize to 1080p if larger (Step 1.4)
         let (width, height) = img.dimensions();
         if width > 1920 || height > 1080 {
             let aspect_ratio = width as f32 / height as f32;
@@ -428,26 +380,20 @@ impl ScreenRecorder {
             img = img.resize(new_width, new_height, image::imageops::FilterType::Lanczos3);
         }
 
-        // Calculate perceptual hash
         let hash = self.hasher.hash_image(&img);
 
-        // Check if screen has changed
         if let Some(last_hash) = &self.last_hash {
             let distance = hash.dist(last_hash);
-            // If very similar (distance < 5), skip saving
             if distance < 5 {
                 println!("No change detected (hash distance: {})", distance);
                 return Ok(());
             }
         }
 
-        // Store hash string before moving
         let hash_string = format!("{}", hash.to_base64());
 
-        // Update last hash
         self.last_hash = Some(hash);
 
-        // Generate timestamp-based filename
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .context("Failed to get system time")?
@@ -457,14 +403,11 @@ impl ScreenRecorder {
         let screenshots_dir = self.get_screenshots_dir()?;
         let filepath = screenshots_dir.join(&filename);
 
-        // Convert to RGB8 for WebP encoding
         let rgb_img = img.to_rgb8();
 
-        // Encode as WebP with high quality compression
         let encoder = webp::Encoder::from_rgb(&rgb_img, rgb_img.width(), rgb_img.height());
-        let webp_data = encoder.encode(85.0); // 85% quality
+        let webp_data = encoder.encode(85.0);
 
-        // Save to disk
         std::fs::write(&filepath, &*webp_data)
             .context("Failed to write WebP file")?;
 
@@ -476,18 +419,16 @@ impl ScreenRecorder {
             filepath.display()
         );
 
-        // Insert frame into database
         let frame_id = self.database.insert_frame(
             timestamp,
             filepath.to_str().unwrap_or(&filename),
             &hash_string,
-            None, // app_name (future feature)
-            None, // window_title (future feature)
+            None,
+            None,
         ).context("Failed to insert frame into database")?;
 
         println!("Frame saved to database (ID: {})", frame_id);
 
-        // OCR and Embedding Generation
         if VERBOSE_LOGGING {
             println!("Performing OCR...");
         }
@@ -504,7 +445,6 @@ impl ScreenRecorder {
             }
         };
 
-        // Save OCR text to database
         if !ocr_text.is_empty() {
             if let Err(e) = self.database.insert_ocr_text(frame_id, &ocr_text) {
                 eprintln!("Failed to insert OCR text: {:#}", e);
@@ -515,7 +455,6 @@ impl ScreenRecorder {
             }
         }
 
-        // Generate embedding
         if !ocr_text.is_empty() {
             if self.embedding_model.is_some() {
                 if VERBOSE_LOGGING {
@@ -528,7 +467,6 @@ impl ScreenRecorder {
                             println!("First 5 dimensions: {:?}", &embedding[..5.min(embedding.len())]);
                         }
                         
-                        // Save embedding to database
                         if let Err(e) = self.database.insert_embedding(frame_id, &embedding) {
                             eprintln!("Failed to insert embedding: {:#}", e);
                         } else {
@@ -542,18 +480,16 @@ impl ScreenRecorder {
                     }
                 }
             } else {
-                println!("⚠ Embedding model not available - skipping embedding generation");
+                println!("Embedding model not available - skipping embedding generation");
             }
         }
 
         Ok(())
     }
 
-    /// Start the capture loop (captures every 2 seconds)
     pub async fn start_capture_loop(mut self) {
         let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(2));
 
-        // Print database stats on startup
         if let Ok(stats) = self.database.get_stats() {
             println!("=== Database Statistics ===");
             println!("Total frames: {}", stats.total_frames);

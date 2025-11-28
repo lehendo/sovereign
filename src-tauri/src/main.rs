@@ -1,4 +1,3 @@
-// Prevents additional console window on Windows in release
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use sovereign_lib::{commands, AppState, Database, ScreenRecorder};
@@ -11,7 +10,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .setup(|app| {
             let app_handle = app.handle().clone();
             
-            // Initialize database
             let db_path = app_handle
                 .path()
                 .app_data_dir()
@@ -27,7 +25,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     e
                 })?;
 
-            // Prune old data (default: keep last 14 days)
             println!("Running retention policy check...");
             match database.prune_old_data(14) {
                 Ok(count) if count > 0 => {
@@ -37,7 +34,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Err(e) => eprintln!("Warning: Failed to prune old data: {}", e),
             }
 
-            // Initialize embedding model (shared between recorder and search)
             let embedding_model = ScreenRecorder::load_embedding_model_offline()
                 .unwrap_or_else(|e| {
                     eprintln!("Error loading embedding model: {:#}", e);
@@ -45,16 +41,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     None
                 });
 
-            // Create shared state for Tauri commands
             let app_state = AppState {
                 database: Arc::new(Mutex::new(database)),
                 embedding_model: Arc::new(Mutex::new(embedding_model)),
             };
 
-            // Store state in Tauri
             app.manage(app_state);
             
-            // Spawn the screen recorder task
             tauri::async_runtime::spawn(async move {
                 match ScreenRecorder::new(app_handle) {
                     Ok(recorder) => {

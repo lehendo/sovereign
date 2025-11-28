@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-/// Search result containing frame metadata and similarity score
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SearchResult {
     pub frame_id: i64,
@@ -10,7 +9,6 @@ pub struct SearchResult {
     pub similarity_score: f32,
 }
 
-/// Recent frame metadata for timeline view
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FrameMetadata {
     pub frame_id: i64,
@@ -21,7 +19,6 @@ pub struct FrameMetadata {
     pub window_title: Option<String>,
 }
 
-/// Calculate cosine similarity between two vectors
 pub fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
     if a.len() != b.len() || a.is_empty() {
         return 0.0;

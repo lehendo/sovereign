@@ -1,6 +1,3 @@
-// Simplified client for the Tauri updater plugin.
-// Based on @tauri-apps/plugin-updater (Apache-2.0 OR MIT).
-
 import { invoke, Channel } from "@tauri-apps/api/core";
 
 export type DownloadEvent =

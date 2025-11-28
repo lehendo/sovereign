@@ -22,7 +22,6 @@
     </style>
 </head>
 <body class="bg-slate-950 text-slate-200 selection:bg-indigo-500 selection:text-white">
-    <!-- Navbar -->
     <nav class="fixed w-full z-50 glass border-b border-slate-800">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
@@ -42,7 +41,6 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
     <section class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
         <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-indigo-600/20 blur-[120px] rounded-full pointer-events-none"></div>
         
@@ -71,7 +69,6 @@
                     View Source Code
                 </a>
             </div>
-            <!-- Terminal Install (The "Hacker" Way) -->
             <div class="mt-12 max-w-lg mx-auto">
                 <p class="text-xs text-slate-500 mb-2 uppercase tracking-wider font-semibold">Or install via terminal (macOS/Linux)</p>
                 <div class="glass p-4 rounded-xl flex items-center justify-between group cursor-pointer border border-slate-800" onclick="navigator.clipboard.writeText('curl -fsSL https://sovereign.app/install.sh | sh'); alert('Copied to clipboard!')">
@@ -82,16 +79,13 @@
         </div>
     </section>
 
-    <!-- UI Screenshot (Placeholder) -->
     <div class="max-w-6xl mx-auto px-4 -mt-10 mb-32 relative z-20">
         <div class="rounded-xl overflow-hidden shadow-2xl border border-slate-800 bg-slate-900 aspect-video flex items-center justify-center group relative">
-            <!-- Replace src with your actual screenshot -->
             <img src="https://placehold.co/1920x1080/1e293b/4f46e5?text=Sovereign+Dashboard+Screenshot" alt="App Screenshot" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
             <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
         </div>
     </div>
 
-    <!-- Features Grid -->
     <section id="features" class="py-24 bg-slate-900/50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16">
@@ -99,7 +93,6 @@
                 <p class="text-slate-400 mt-2">Built for power users who care about privacy.</p>
             </div>
             <div class="grid md:grid-cols-3 gap-8">
-                <!-- Feature 1 -->
                 <div class="p-8 rounded-2xl glass hover:bg-slate-800/50 transition-colors border border-slate-800">
                     <div class="w-12 h-12 bg-indigo-500/20 rounded-lg flex items-center justify-center mb-6">
                         <i data-lucide="zap" class="text-indigo-400"></i>
@@ -107,7 +100,6 @@
                     <h3 class="text-xl font-bold text-white mb-3">Zero-Cost Memory</h3>
                     <p class="text-slate-400">Written in Rust. Runs in the background using < 1% CPU and minimal RAM. Unlike Python alternatives, it won't drain your battery.</p>
                 </div>
-                <!-- Feature 2 -->
                 <div class="p-8 rounded-2xl glass hover:bg-slate-800/50 transition-colors border border-slate-800">
                     <div class="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center mb-6">
                         <i data-lucide="lock" class="text-emerald-400"></i>
@@ -115,7 +107,6 @@
                     <h3 class="text-xl font-bold text-white mb-3">Local-First AI</h3>
                     <p class="text-slate-400">Uses local Tesseract OCR and on-device vector embeddings. No data ever leaves your machine. No API keys required.</p>
                 </div>
-                <!-- Feature 3 -->
                 <div class="p-8 rounded-2xl glass hover:bg-slate-800/50 transition-colors border border-slate-800">
                     <div class="w-12 h-12 bg-rose-500/20 rounded-lg flex items-center justify-center mb-6">
                         <i data-lucide="eye-off" class="text-rose-400"></i>
@@ -127,14 +118,12 @@
         </div>
     </section>
 
-    <!-- Installation Section -->
     <section id="install" class="py-24">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="text-3xl font-bold text-white text-center mb-12">Install Sovereign</h2>
             
             <div class="space-y-4">
-                <!-- Windows -->
-                <!-- <div class="flex items-center justify-between p-6 rounded-xl glass border border-slate-700 hover:border-indigo-500 transition-colors">
+                <div class="flex items-center justify-between p-6 rounded-xl glass border border-slate-700 hover:border-indigo-500 transition-colors">
                     <div class="flex items-center gap-4">
                         <i data-lucide="monitor" class="w-8 h-8 text-blue-400"></i>
                         <div>
@@ -143,8 +132,7 @@
                         </div>
                     </div>
                     <a href="https://github.com/lehendo/sovereign/releases/latest" class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors">Download .exe</a>
-                </div> -->
-                <!-- macOS -->
+                </div>
                 <div class="flex items-center justify-between p-6 rounded-xl glass border border-slate-700 hover:border-indigo-500 transition-colors">
                     <div class="flex items-center gap-4">
                         <i data-lucide="command" class="w-8 h-8 text-slate-200"></i>
@@ -155,8 +143,7 @@
                     </div>
                     <a href="https://github.com/lehendo/sovereign/releases/download/v1.0.1/Sovereign_1.0.1_x64.dmg" download class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors">Download .dmg</a>
                 </div>
-                <!-- Linux -->
-                <!-- <div class="flex items-center justify-between p-6 rounded-xl glass border border-slate-700 hover:border-indigo-500 transition-colors">
+                <div class="flex items-center justify-between p-6 rounded-xl glass border border-slate-700 hover:border-indigo-500 transition-colors">
                     <div class="flex items-center gap-4">
                         <i data-lucide="terminal" class="w-8 h-8 text-orange-400"></i>
                         <div>
@@ -168,12 +155,11 @@
                         <a href="https://github.com/lehendo/sovereign/releases/latest" class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors">.deb</a>
                         <a href="https://github.com/lehendo/sovereign/releases/latest" class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors">.AppImage</a>
                     </div>
-                </div> -->
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Footer -->
     <footer class="border-t border-slate-800 py-12 bg-slate-950">
         <div class="max-w-7xl mx-auto px-4 text-center">
             <p class="text-slate-500 mb-4">
