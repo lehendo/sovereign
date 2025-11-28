@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sovereign | Privacy-First AI Memory</title>
+    <meta name="description" content="A local-only, high-performance alternative to Microsoft Recall. Record and search your history without sending data to the cloud.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 selection:bg-indigo-500 selection:text-white">
+    <!-- Navbar -->
+    <nav class="fixed w-full z-50 glass border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="shield-check" class="text-indigo-400 w-6 h-6"></i>
+                    <span class="font-bold text-xl tracking-tight text-white">Sovereign</span>
+                </div>
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="#features" class="hover:text-indigo-400 transition-colors">Features</a>
+                    <a href="#privacy" class="hover:text-indigo-400 transition-colors">Privacy</a>
+                    <a href="#install" class="hover:text-indigo-400 transition-colors">Install</a>
+                    <a href="https://github.com/lehendo/sovereign" class="text-slate-400 hover:text-white transition-colors">
+                        <i data-lucide="github" class="w-5 h-5"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-indigo-600/20 blur-[120px] rounded-full pointer-events-none"></div>
+        
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full glass text-xs font-medium text-indigo-300 mb-8 border border-indigo-500/30">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                </span>
+                v1.0.0 Public Release
+            </div>
+            
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-white mb-6">
+                Your Digital Memory. <br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Not Microsoft's.</span>
+            </h1>
+            
+            <p class="mt-4 max-w-2xl mx-auto text-xl text-slate-400">
+                A high-performance, local-only screen memory tool. Search everything you've seen without sending a single pixel to the cloud.
+            </p>
+            <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <a href="#install" class="px-8 py-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-lg transition-all shadow-[0_0_20px_rgba(79,70,229,0.3)] flex items-center gap-2">
+                    <i data-lucide="download"></i> Download for Desktop
+                </a>
+                <a href="https://github.com/lehendo/sovereign" class="px-8 py-4 rounded-lg glass hover:bg-white/10 text-white font-semibold text-lg transition-all border border-slate-700">
+                    View Source Code
+                </a>
+            </div>
+            <!-- Terminal Install (The "Hacker" Way) -->
+            <div class="mt-12 max-w-lg mx-auto">
+                <p class="text-xs text-slate-500 mb-2 uppercase tracking-wider font-semibold">Or install via terminal (macOS/Linux)</p>
+                <div class="glass p-4 rounded-xl flex items-center justify-between group cursor-pointer border border-slate-800" onclick="navigator.clipboard.writeText('curl -fsSL https://sovereign.app/install.sh | sh'); alert('Copied to clipboard!')">
+                    <code class="font-mono text-sm text-indigo-300">curl -fsSL https://sovereign.app/install.sh | sh</code>
+                    <i data-lucide="copy" class="w-4 h-4 text-slate-500 group-hover:text-white transition-colors"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- UI Screenshot (Placeholder) -->
+    <div class="max-w-6xl mx-auto px-4 -mt-10 mb-32 relative z-20">
+        <div class="rounded-xl overflow-hidden shadow-2xl border border-slate-800 bg-slate-900 aspect-video flex items-center justify-center group relative">
+            <!-- Replace src with your actual screenshot -->
+            <img src="https://placehold.co/1920x1080/1e293b/4f46e5?text=Sovereign+Dashboard+Screenshot" alt="App Screenshot" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity">
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
+        </div>
+    </div>
+
+    <!-- Features Grid -->
+    <section id="features" class="py-24 bg-slate-900/50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold text-white">Why Sovereign?</h2>
+                <p class="text-slate-400 mt-2">Built for power users who care about privacy.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="p-8 rounded-2xl glass hover:bg-slate-800/50 transition-colors border border-slate-800">
+                    <div class="w-12 h-12 bg-indigo-500/20 rounded-lg flex items-center justify-center mb-6">
+                        <i data-lucide="zap" class="text-indigo-400"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3">Zero-Cost Memory</h3>
+                    <p class="text-slate-400">Written in Rust. Runs in the background using < 1% CPU and minimal RAM. Unlike Python alternatives, it won't drain your battery.</p>
+                </div>
+                <!-- Feature 2 -->
+                <div class="p-8 rounded-2xl glass hover:bg-slate-800/50 transition-colors border border-slate-800">
+                    <div class="w-12 h-12 bg-emerald-500/20 rounded-lg flex items-center justify-center mb-6">
+                        <i data-lucide="lock" class="text-emerald-400"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3">Local-First AI</h3>
+                    <p class="text-slate-400">Uses local Tesseract OCR and on-device vector embeddings. No data ever leaves your machine. No API keys required.</p>
+                </div>
+                <!-- Feature 3 -->
+                <div class="p-8 rounded-2xl glass hover:bg-slate-800/50 transition-colors border border-slate-800">
+                    <div class="w-12 h-12 bg-rose-500/20 rounded-lg flex items-center justify-center mb-6">
+                        <i data-lucide="eye-off" class="text-rose-400"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white mb-3">Smart Blacklist</h3>
+                    <p class="text-slate-400">Automatically pauses recording when you open Incognito windows, Bitwarden, or 1Password. You stay in control.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation Section -->
+    <section id="install" class="py-24">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl font-bold text-white text-center mb-12">Install Sovereign</h2>
+            
+            <div class="space-y-4">
+                <!-- Windows -->
+                <div class="flex items-center justify-between p-6 rounded-xl glass border border-slate-700 hover:border-indigo-500 transition-colors">
+                    <div class="flex items-center gap-4">
+                        <i data-lucide="monitor" class="w-8 h-8 text-blue-400"></i>
+                        <div>
+                            <h3 class="font-bold text-white">Windows</h3>
+                            <p class="text-sm text-slate-400">Windows 10/11 (x64)</p>
+                        </div>
+                    </div>
+                    <a href="https://github.com/lehendo/sovereign/releases/latest/download/sovereign_x64-setup.exe" class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors">Download .exe</a>
+                </div>
+                <!-- macOS -->
+                <div class="flex items-center justify-between p-6 rounded-xl glass border border-slate-700 hover:border-indigo-500 transition-colors">
+                    <div class="flex items-center gap-4">
+                        <i data-lucide="command" class="w-8 h-8 text-slate-200"></i>
+                        <div>
+                            <h3 class="font-bold text-white">macOS</h3>
+                            <p class="text-sm text-slate-400">Apple Silicon & Intel</p>
+                        </div>
+                    </div>
+                    <a href="https://github.com/lehendo/sovereign/releases/latest/download/sovereign_x64.dmg" class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors">Download .dmg</a>
+                </div>
+                <!-- Linux -->
+                <div class="flex items-center justify-between p-6 rounded-xl glass border border-slate-700 hover:border-indigo-500 transition-colors">
+                    <div class="flex items-center gap-4">
+                        <i data-lucide="terminal" class="w-8 h-8 text-orange-400"></i>
+                        <div>
+                            <h3 class="font-bold text-white">Linux</h3>
+                            <p class="text-sm text-slate-400">Debian/Ubuntu/Fedora</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <a href="https://github.com/lehendo/sovereign/releases/latest/download/sovereign_amd64.deb" class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors">.deb</a>
+                        <a href="https://github.com/lehendo/sovereign/releases/latest/download/sovereign.AppImage" class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors">.AppImage</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 py-12 bg-slate-950">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-slate-500 mb-4">
+                "Performance is Privacy."
+            </p>
+            <div class="flex justify-center gap-6 text-sm text-slate-400">
+                <a href="https://github.com/lehendo/sovereign" class="hover:text-white">GitHub</a>
+                <a href="https://github.com/lehendo/sovereign/blob/main/SECURITY.md" class="hover:text-white">Security</a>
+                <a href="https://github.com/lehendo/sovereign/blob/main/LICENSE" class="hover:text-white">License (MIT)</a>
+            </div>
+            <p class="mt-8 text-xs text-slate-600">
+                Not affiliated with Microsoft. 'Recall' is a trademark of Microsoft Corporation.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
+

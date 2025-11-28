@@ -4,6 +4,8 @@
 
 A high-performance, local-only screen recording and search system. Runs continuously without draining battery or consuming excessive memory.
 
+**[Visit the Landing Page →](https://lehendo.github.io/sovereign/)**
+
 ## Philosophy
 
 > "Performance is Privacy."
