@@ -1,13 +1,16 @@
 use anyhow::{Context, Result};
 use fastembed::{TextEmbedding, UserDefinedEmbeddingModel};
-use image::{DynamicImage, GenericImageView};
+use image::{DynamicImage, GenericImageView, ImageOutputFormat};
 use image_hasher::{HasherConfig, ImageHash};
 use rusty_tesseract::{Args, Image as TesseractImage};
+use tempfile::NamedTempFile;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::AppHandle;
 use tauri::Manager;
 use xcap::Monitor;
+
+const VERBOSE_LOGGING: bool = cfg!(debug_assertions);
 
 use crate::database::Database;
 
@@ -347,10 +350,15 @@ impl ScreenRecorder {
 
     /// Extract text from image using OCR
     fn extract_text_from_image(&self, img: &DynamicImage) -> Result<String> {
-        // Save image temporarily for Tesseract
-        let temp_path = std::env::temp_dir().join("sovereign_ocr_temp.png");
-        img.save(&temp_path)
-            .context("Failed to save temporary image for OCR")?;
+        // Create a unique temp file with exclusive access to avoid TOCTOU issues
+        let mut temp_file = NamedTempFile::new()
+            .context("Failed to create temporary file for OCR")?;
+
+        img.write_to(&mut temp_file, ImageOutputFormat::Png)
+            .context("Failed to write temporary image for OCR")?;
+
+        // Keep file alive until OCR completes, then drop to delete automatically
+        let temp_path = temp_file.into_temp_path();
 
         // Configure Tesseract
         let mut args = Args::default();
@@ -364,8 +372,9 @@ impl ScreenRecorder {
         let text = rusty_tesseract::image_to_string(&ocr_image, &args)
             .context("OCR failed")?;
 
-        // Clean up temp file
-        let _ = std::fs::remove_file(temp_path);
+        temp_path
+            .close()
+            .context("Failed to remove OCR temporary file")?;
 
         Ok(text.trim().to_string())
     }
@@ -481,16 +490,13 @@ impl ScreenRecorder {
         println!("Frame saved to database (ID: {})", frame_id);
 
         // OCR and Embedding Generation
-        println!("Performing OCR...");
+        if VERBOSE_LOGGING {
+            println!("Performing OCR...");
+        }
         let ocr_text = match self.extract_text_from_image(&img) {
             Ok(text) => {
-                println!("OCR extracted {} characters", text.len());
-                if text.len() > 100 {
-                    println!("OCR text preview: {}...", &text[..100]);
-                } else if !text.is_empty() {
-                    println!("OCR text: {}", text);
-                } else {
-                    println!("OCR: No text detected");
+                if VERBOSE_LOGGING {
+                    println!("OCR extracted {} characters", text.len());
                 }
                 text
             }
@@ -505,24 +511,32 @@ impl ScreenRecorder {
             if let Err(e) = self.database.insert_ocr_text(frame_id, &ocr_text) {
                 eprintln!("Failed to insert OCR text: {:#}", e);
             } else {
-                println!("OCR text saved to database");
+                if VERBOSE_LOGGING {
+                    println!("OCR text saved to database");
+                }
             }
         }
 
         // Generate embedding
         if !ocr_text.is_empty() {
             if self.embedding_model.is_some() {
-                println!("Generating embedding...");
+                if VERBOSE_LOGGING {
+                    println!("Generating embedding...");
+                }
                 match self.generate_embedding(&ocr_text) {
                     Ok(embedding) => {
-                        println!("Embedding vector length: {}", embedding.len());
-                        println!("First 5 dimensions: {:?}", &embedding[..5.min(embedding.len())]);
+                        if VERBOSE_LOGGING {
+                            println!("Embedding vector length: {}", embedding.len());
+                            println!("First 5 dimensions: {:?}", &embedding[..5.min(embedding.len())]);
+                        }
                         
                         // Save embedding to database
                         if let Err(e) = self.database.insert_embedding(frame_id, &embedding) {
                             eprintln!("Failed to insert embedding: {:#}", e);
                         } else {
-                            println!("Embedding saved to database");
+                            if VERBOSE_LOGGING {
+                                println!("Embedding saved to database");
+                            }
                         }
                     }
                     Err(e) => {

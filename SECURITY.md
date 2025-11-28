@@ -99,6 +99,11 @@ The app automatically skips recording when it detects sensitive applications:
 - Timestamps in filenames could reveal user activity patterns
 - No per-window granular control (future feature)
 
+## Updates & Verification
+
+- Sovereign releases are cryptographically signed. When the app says an update is available, it already verified the signature before applying it.
+- You can manually check for updates inside the desktop app (`Settings → Check for Updates`) or download fresh installers from the landing page.
+
 ## Dependencies
 
 We use automated dependency scanning and will address security vulnerabilities promptly:

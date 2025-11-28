@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider, useQuery, useMutation } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { SearchBar } from "./components/SearchBar";
 import { Timeline } from "./components/Timeline";
 import { Grid } from "./components/Grid";
 import { Modal } from "./components/Modal";
-import { Activity, Database as DatabaseIcon, Shield } from "lucide-react";
+import { UpdateBanner } from "./components/UpdateBanner";
+import { Database as DatabaseIcon, Shield } from "lucide-react";
 import type { FrameMetadata, DatabaseStats } from "./types";
+import LogoMark from "./assets/logo.svg";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,6 +23,7 @@ function AppContent() {
   const [selectedFrame, setSelectedFrame] = useState<FrameMetadata | null>(null);
   const [searchResults, setSearchResults] = useState<FrameMetadata[]>([]);
   const [isSearchMode, setIsSearchMode] = useState(false);
+  const [timelineRange, setTimelineRange] = useState<{ start: number; end: number } | null>(null);
 
   // Fetch recent frames on load
   const { data: recentFrames = [], isLoading: isLoadingRecent } = useQuery<FrameMetadata[]>({
@@ -55,22 +58,48 @@ function AppContent() {
     searchMutation.mutate(query);
   };
 
+  useEffect(() => {
+    const oldest =
+      typeof stats?.oldest_timestamp === "number" ? stats.oldest_timestamp : null;
+    const newest =
+      typeof stats?.newest_timestamp === "number" ? stats.newest_timestamp : null;
+
+    if (oldest !== null && newest !== null) {
+      setTimelineRange((prev) => {
+        const prevStart = prev?.start ?? oldest;
+        const prevEnd = prev?.end ?? newest;
+
+        return {
+          start: Math.max(oldest, Math.min(prevStart, newest)),
+          end: Math.min(newest, Math.max(prevEnd, oldest)),
+        };
+      });
+    } else {
+      setTimelineRange(null);
+    }
+  }, [stats?.oldest_timestamp, stats?.newest_timestamp]);
+
   const handleTimelineChange = (start: number, end: number) => {
-    console.log("Timeline range:", start, end);
-    // TODO: Filter frames by time range
+    setTimelineRange({ start, end });
   };
 
-  const displayedFrames = isSearchMode ? searchResults : recentFrames;
+  const baseFrames = isSearchMode ? searchResults : recentFrames;
+  const displayedFrames = timelineRange
+    ? baseFrames.filter(
+        (frame) =>
+          frame.timestamp >= timelineRange.start && frame.timestamp <= timelineRange.end,
+      )
+    : baseFrames;
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       {/* Header */}
-      <header className="border-b border-gray-800 bg-gray-900/50 backdrop-blur-sm sticky top-0 z-40">
+      <header className="border-b border-gray-800 bg-gray-900/60 backdrop-blur sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <Activity className="w-6 h-6 text-blue-500" />
-              <h1 className="text-2xl font-bold">Sovereign</h1>
+              <img src={LogoMark} alt="Sovereign" className="w-8 h-8 rounded-2xl border border-white/10 shadow-lg" />
+              <h1 className="text-2xl font-bold tracking-tight">Sovereign</h1>
               <span className="text-xs text-gray-500 px-2 py-1 bg-gray-800 rounded">
                 Privacy-First Screen Memory
               </span>
@@ -123,8 +152,12 @@ function AppContent() {
         <div className="grid lg:grid-cols-4 gap-6">
           {/* Sidebar */}
           <aside className="lg:col-span-1 space-y-4">
+            <UpdateBanner />
             <Timeline
               totalFrames={stats?.total_frames || 0}
+              oldestTimestamp={stats?.oldest_timestamp ?? undefined}
+              newestTimestamp={stats?.newest_timestamp ?? undefined}
+              range={timelineRange}
               onRangeChange={handleTimelineChange}
             />
 
@@ -173,7 +206,8 @@ function AppContent() {
             {isSearchMode && (
               <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                 <p className="text-sm text-blue-400">
-                  Found {searchResults.length} results
+                  Showing {displayedFrames.length} matching frame
+                  {displayedFrames.length === 1 ? "" : "s"}
                 </p>
               </div>
             )}

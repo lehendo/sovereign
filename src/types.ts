@@ -12,8 +12,8 @@ export interface DatabaseStats {
   total_frames: number;
   total_ocr_entries: number;
   total_embeddings: number;
-  oldest_timestamp?: number;
-  newest_timestamp?: number;
+  oldest_timestamp?: number | null;
+  newest_timestamp?: number | null;
 }
 
 

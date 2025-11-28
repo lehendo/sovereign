@@ -1,6 +1,7 @@
 {
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Sovereign",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "identifier": "com.sovereign.app",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -19,7 +20,7 @@
       "icons/icon.ico"
     ]
   },
-  "app": {
+"app": {
     "windows": [
       {
         "title": "Sovereign",
@@ -34,10 +35,20 @@
       "assetProtocol": {
         "enable": true,
         "scope": [
-          "$APPDATA/**",
-          "$APPDATA/screenshots/**"
+          "$APPDATA/com.sovereign.app/**",
+          "$APPDATA/com.sovereign.app/screenshots/**"
         ]
       }
+    },
+    "withGlobalTauri": true
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/lehendo/sovereign/releases/latest/download/latest.json"
+      ],
+      "dialog": true,
+      "pubkey": "$TAURI_PUBLIC_KEY"
     }
   }
 }

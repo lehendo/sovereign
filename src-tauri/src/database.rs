@@ -160,10 +160,18 @@ impl Database {
             |row| row.get(0),
         )?;
 
+        let (oldest_timestamp, newest_timestamp): (Option<i64>, Option<i64>) = self.conn.query_row(
+            "SELECT MIN(timestamp), MAX(timestamp) FROM frames",
+            [],
+            |row| Ok((row.get::<_, Option<i64>>(0)?, row.get::<_, Option<i64>>(1)?)),
+        )?;
+
         Ok(DatabaseStats {
             total_frames: frame_count,
             total_ocr_entries: ocr_count,
             total_embeddings: embedding_count,
+            oldest_timestamp,
+            newest_timestamp,
         })
     }
 }
@@ -174,6 +182,8 @@ pub struct DatabaseStats {
     pub total_frames: i64,
     pub total_ocr_entries: i64,
     pub total_embeddings: i64,
+    pub oldest_timestamp: Option<i64>,
+    pub newest_timestamp: Option<i64>,
 }
 
 impl Database {

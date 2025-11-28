@@ -1,6 +1,6 @@
 [package]
 name = "sovereign"
-version = "1.0.0"
+version = "1.0.1"
 description = "Privacy-first screen memory tool"
 authors = ["you"]
 edition = "2021"
@@ -14,7 +14,7 @@ tauri-build = { version = "2.0.0", features = [] }
 
 [dependencies]
 tauri = { version = "2.0.0", features = ["protocol-asset"] }
-tauri-plugin-shell = "2.0.0"
+tauri-plugin-updater = "2.0.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["full"] }
@@ -29,7 +29,5 @@ dirs = "5.0"
 rusqlite = { version = "0.32", features = ["bundled"] }
 bincode = "1.3"
 chrono = "0.4"
-
-[target."cfg(not(any(target_os = \"android\", target_os = \"ios\")))".dependencies]
-tauri-plugin-shell = "2.0.0"
+tempfile = "3.10"
 

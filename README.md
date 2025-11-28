@@ -199,43 +199,11 @@ Linux requirements depend on your desktop environment:
    - **X11**: Works automatically once xdotool is installed
    - **Wayland**: Window detection may be limited (xdotool primarily supports X11)
 
-### Development (Build from Source)
+### Updates
 
-For contributors and developers who want to build from source:
-
-**Prerequisites:**
-- **Node.js 20.19+ or 22.12+** (LTS versions recommended)
-- **Rust 1.70+**
-- **Xcode Command Line Tools** (macOS)
-- **Tesseract OCR** (see Quick Start section above)
-
-**Setup:**
-
-1. Clone the repository:
-```bash
-git clone https://github.com/lehendo/sovereign.git
-cd sovereign
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. (Optional) Download embedding model (see Quick Start section above)
-
-4. Run development server:
-```bash
-npm run tauri dev
-```
-
-**Build for Production:**
-
-```bash
-npm run tauri build
-```
-
-The compiled application will be in `src-tauri/target/release/`.
+- The desktop app automatically checks `Check for Updates` in the sidebar.
+- When a new signed version is published, the updater downloads, verifies, and restarts Sovereign automatically.
+- If no update is available, you’ll see “You’re on the latest version.” You can always re-download from the landing page if something looks wrong.
 
 ## Storage
 
@@ -304,59 +272,6 @@ The database contains:
 - On X11: Window detection should work automatically once xdotool is installed
 - On Wayland: Window detection may be limited (xdotool primarily supports X11)
 - Check terminal output for error messages related to xdotool
-
-## API Reference
-
-### Tauri Commands (Callable from Frontend)
-
-```typescript
-// Search frames by semantic similarity
-await invoke<SearchResult[]>('search_frames', { query: 'code review' });
-
-// Get recent frames for timeline
-await invoke<FrameMetadata[]>('get_recent_frames', { limit: 50 });
-
-// Get database statistics
-await invoke<DatabaseStats>('get_database_stats');
-```
-
-## Future Enhancements
-
-- User-configurable blacklist
-- Per-window privacy settings
-- Encrypted storage option
-- Export/import data
-- Advanced search filters
-- Activity timeline visualization
-- Password protection for stored screenshots
-- Per-window granular control
-
-## Project Structure
-
-```
-sovereign/
-├── src/                      # React frontend
-│   ├── App.tsx              # Main UI component + TanStack Query
-│   ├── components/          # UI components
-│   │   ├── SearchBar.tsx    # Cmd+K search (keyboard shortcuts)
-│   │   ├── Timeline.tsx     # History slider
-│   │   ├── Grid.tsx         # Masonry layout for frames
-│   │   └── Modal.tsx        # Full image viewer
-│   ├── types.ts             # TypeScript definitions
-│   ├── main.tsx             # React entry point
-│   └── index.css            # Tailwind styles
-├── src-tauri/
-│   ├── src/
-│   │   ├── main.rs          # Tauri app + commands + retention
-│   │   ├── recorder.rs      # Capture + OCR + embeddings + blacklist
-│   │   ├── database.rs      # SQLite persistence + pruning
-│   │   ├── search.rs        # Cosine similarity search
-│   │   ├── commands.rs      # Tauri command handlers
-│   │   └── lib.rs           # Module declarations
-│   ├── Cargo.toml           # Rust dependencies
-│   └── tauri.conf.json      # Tauri configuration
-└── package.json             # Frontend dependencies
-```
 
 ## License
 
