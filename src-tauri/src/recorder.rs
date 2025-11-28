@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use fastembed::{TextEmbedding, UserDefinedEmbeddingModel};
-use image::{DynamicImage, GenericImageView, ImageOutputFormat};
+use image::{DynamicImage, GenericImageView};
 use image_hasher::{HasherConfig, ImageHash};
 use rusty_tesseract::{Args, Image as TesseractImage};
 use tempfile::NamedTempFile;
@@ -351,14 +351,12 @@ impl ScreenRecorder {
     /// Extract text from image using OCR
     fn extract_text_from_image(&self, img: &DynamicImage) -> Result<String> {
         // Create a unique temp file with exclusive access to avoid TOCTOU issues
-        let mut temp_file = NamedTempFile::new()
+        let temp_file = NamedTempFile::new()
             .context("Failed to create temporary file for OCR")?;
-
-        img.write_to(&mut temp_file, ImageOutputFormat::Png)
-            .context("Failed to write temporary image for OCR")?;
-
-        // Keep file alive until OCR completes, then drop to delete automatically
         let temp_path = temp_file.into_temp_path();
+
+        img.save(&temp_path)
+            .context("Failed to write temporary image for OCR")?;
 
         // Configure Tesseract
         let mut args = Args::default();
