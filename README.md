@@ -228,50 +228,45 @@ The database contains:
 
 ## Troubleshooting
 
-### Blank white window on startup
-- **Cause**: Node.js version too old
-- **Solution**: Upgrade to Node.js 20.19+ or 22.12+ (LTS versions)
-  - Download from: https://nodejs.org/
-  - After upgrading: `rm -rf node_modules package-lock.json && npm install`
-- **Note**: Node 21 and earlier are End-of-Life and not supported
-
 ### "Tesseract not found"
-- Make sure Tesseract is installed and in your PATH
-- On Windows, you may need to set `TESSDATA_PREFIX` environment variable
+- Make sure Tesseract is installed (see Installation instructions above)
+- On Windows, you may need to add Tesseract to your PATH or set the `TESSDATA_PREFIX` environment variable
+- Restart the app after installing Tesseract
 
 ### "Model cache not found"
-- The app works perfectly with OCR only
-- To enable embeddings, follow the manual download instructions above
+- The app works perfectly with OCR-only mode (text search without semantic search)
+- To enable semantic search with embeddings, follow the manual download instructions in the Installation section above
 - Model files are loaded completely offline (no network requests)
-- Total download size: ~90MB (one-time)
+- Total download size: ~90MB (one-time download)
 
 ### High CPU usage
 - Normal during OCR processing (CPU-intensive by design)
-- Consider increasing capture interval if needed
+- The app captures and processes screenshots every 2 seconds
+- CPU usage should stabilize after initial processing
 
 ### OCR returns wrong text
 - OCR accuracy depends on screen content quality
 - Works best with clear, high-contrast text
-- Small/blurry text may not be recognized accurately
+- Small, blurry, or stylized text may not be recognized accurately
+- This is a limitation of OCR technology, not a bug
 
 ### Privacy Guard not working
 
 **macOS:**
-- Ensure Accessibility permission is enabled (see Required Permissions above)
-- Check terminal output for "[Privacy Guard] Failed to get active window" messages
+- Ensure both Screen Recording and Accessibility permissions are enabled (see Required Permissions above)
+- Go to **System Settings > Privacy & Security > Accessibility** and enable "Sovereign"
 - Restart the app after enabling Accessibility permission
-- Privacy Guard requires both Screen Recording and Accessibility permissions
+- Privacy Guard requires both permissions to function
 
 **Windows:**
 - Window detection should work automatically
-- If Privacy Guard fails, check that PowerShell is available and working
-- Ensure the app has necessary permissions to query window information
+- If Privacy Guard fails, ensure the app has necessary permissions
+- Try restarting the app
 
 **Linux:**
 - Ensure `xdotool` is installed (see Required Permissions above)
 - On X11: Window detection should work automatically once xdotool is installed
 - On Wayland: Window detection may be limited (xdotool primarily supports X11)
-- Check terminal output for error messages related to xdotool
 
 ## License
 
