@@ -50,7 +50,7 @@
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                   <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
                 </span>
-                v1.0.0 Public Release
+                v1.1.0 Public Release
             </div>
             
             <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-white mb-6">
@@ -62,19 +62,12 @@
                 A high-performance, local-only screen memory tool. Search everything you've seen without sending a single pixel to the cloud.
             </p>
             <div class="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <a href="https://github.com/lehendo/sovereign/releases/download/v1.0.0/Sovereign_1.0.0_x64.dmg" download class="px-8 py-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-lg transition-all shadow-[0_0_20px_rgba(79,70,229,0.3)] flex items-center gap-2">
-                    <i data-lucide="download"></i> Download for Desktop
+                <a href="#install" class="px-8 py-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-lg transition-all shadow-[0_0_20px_rgba(79,70,229,0.3)] flex items-center gap-2">
+                    <i data-lucide="download"></i> Download Latest Release
                 </a>
                 <a href="https://github.com/lehendo/sovereign" class="px-8 py-4 rounded-lg glass hover:bg-white/10 text-white font-semibold text-lg transition-all border border-slate-700">
                     View Source Code
                 </a>
-            </div>
-            <div class="mt-12 max-w-lg mx-auto">
-                <p class="text-xs text-slate-500 mb-2 uppercase tracking-wider font-semibold">Or install via terminal (macOS/Linux)</p>
-                <div class="glass p-4 rounded-xl flex items-center justify-between group cursor-pointer border border-slate-800" onclick="navigator.clipboard.writeText('curl -fsSL https://sovereign.app/install.sh | sh'); alert('Copied to clipboard!')">
-                    <code class="font-mono text-sm text-indigo-300">curl -fsSL https://sovereign.app/install.sh | sh</code>
-                    <i data-lucide="copy" class="w-4 h-4 text-slate-500 group-hover:text-white transition-colors"></i>
-                </div>
             </div>
         </div>
     </section>
@@ -123,7 +116,7 @@
             <h2 class="text-3xl font-bold text-white text-center mb-12">Install Sovereign</h2>
             
             <div class="space-y-4">
-                <!-- <div class="flex items-center justify-between p-6 rounded-xl glass border border-slate-700 hover:border-indigo-500 transition-colors">
+                <div class="flex items-center justify-between p-6 rounded-xl glass border border-slate-700 hover:border-indigo-500 transition-colors">
                     <div class="flex items-center gap-4">
                         <i data-lucide="monitor" class="w-8 h-8 text-blue-400"></i>
                         <div>
@@ -131,31 +124,34 @@
                             <p class="text-sm text-slate-400">Windows 10/11 (x64)</p>
                         </div>
                     </div>
-                    <a href="https://github.com/lehendo/sovereign/releases/latest" class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors">Download .exe</a>
-                </div> -->
+                    <a href="https://github.com/lehendo/sovereign/releases/download/v1.1.0/Sovereign_1.1.0_x64_en-US.msi" download class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors">Download .msi</a>
+                </div>
                 <div class="flex items-center justify-between p-6 rounded-xl glass border border-slate-700 hover:border-indigo-500 transition-colors">
                     <div class="flex items-center gap-4">
                         <i data-lucide="command" class="w-8 h-8 text-slate-200"></i>
                         <div>
                             <h3 class="font-bold text-white">macOS</h3>
-                            <p class="text-sm text-slate-400">Intel (Apple Silicon coming soon)</p>
+                            <p class="text-sm text-slate-400">Intel & Apple Silicon</p>
                         </div>
                     </div>
-                    <a href="https://github.com/lehendo/sovereign/releases/download/v1.0.1/Sovereign_1.0.1_x64.dmg" download class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors">Download .dmg</a>
+                    <div class="flex gap-2">
+                        <a href="https://github.com/lehendo/sovereign/releases/download/v1.1.0/Sovereign_1.1.0_x64.dmg" download class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors">Intel</a>
+                        <a href="https://github.com/lehendo/sovereign/releases/download/v1.1.0/Sovereign_1.1.0_aarch64.dmg" download class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors">Apple Silicon</a>
+                    </div>
                 </div>
-                <!-- <div class="flex items-center justify-between p-6 rounded-xl glass border border-slate-700 hover:border-indigo-500 transition-colors">
+                <div class="flex items-center justify-between p-6 rounded-xl glass border border-slate-700 hover:border-indigo-500 transition-colors">
                     <div class="flex items-center gap-4">
                         <i data-lucide="terminal" class="w-8 h-8 text-orange-400"></i>
                         <div>
                             <h3 class="font-bold text-white">Linux</h3>
-                            <p class="text-sm text-slate-400">Debian/Ubuntu/Fedora</p>
+                            <p class="text-sm text-slate-400">Debian/Ubuntu/Fedora/Arch</p>
                         </div>
                     </div>
                     <div class="flex gap-2">
-                        <a href="https://github.com/lehendo/sovereign/releases/latest" class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors">.deb</a>
-                        <a href="https://github.com/lehendo/sovereign/releases/latest" class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors">.AppImage</a>
+                        <a href="https://github.com/lehendo/sovereign/releases/download/v1.1.0/Sovereign_1.1.0_amd64.deb" download class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors">.deb</a>
+                        <a href="https://github.com/lehendo/sovereign/releases/download/v1.1.0/Sovereign_1.1.0_amd64.AppImage" download class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors">.AppImage</a>
                     </div>
-                </div> -->
+                </div>
             </div>
         </div>
     </section>
@@ -181,4 +177,5 @@
     </script>
 </body>
 </html>
+
 

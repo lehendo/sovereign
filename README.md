@@ -49,7 +49,7 @@ Search your screen history using natural language. Find that email, code snippet
 - **Local-Only**: All processing happens on your device. Zero network requests after initial setup
 - **Auto-Deletion**: Data older than 14 days is automatically removed
 
-### ⚡ Performance Optimized
+### Performance Optimized
 - **Smart Capture**: Only saves screenshots when your screen actually changes (perceptual hashing)
 - **Efficient Storage**: High-compression WebP format, automatic 1080p resizing for 4K displays
 - **Low Resource Usage**: Runs in background with minimal CPU and memory footprint
