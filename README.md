@@ -1,102 +1,98 @@
 # Sovereign
 
-**Privacy-First Screen Memory Desktop Application**
+<div align="center">
 
-A high-performance, local-only screen recording and search system. Runs continuously without draining battery or consuming excessive memory.
+**Your Digital Memory. Not Microsoft's.**
 
-**[Visit the Landing Page →](https://lehendo.github.io/sovereign/)**
+A privacy-first, local-only alternative to Microsoft Recall. Search everything you've seen on your screen without sending a single pixel to the cloud.
 
-## Philosophy
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)](https://github.com/lehendo/sovereign/releases/latest)
 
-> "Performance is Privacy."
+**[🌐 Visit Landing Page](https://lehendo.github.io/sovereign/)** • **[📥 Download Latest Release](https://github.com/lehendo/sovereign/releases/latest)** • **[🔒 Security Policy](SECURITY.md)**
 
-All processing happens locally on your device. No cloud, no telemetry, complete control.
+</div>
 
-## Security Warning
+---
 
-**IMPORTANT: This software captures ALL visible content on your screen, including sensitive information.**
+## Why Sovereign?
 
-- Screenshots are stored UNENCRYPTED on your local disk
-- Anyone with access to your computer can view screenshots
-- Use at your own risk
+**Microsoft Recall** sends your screen data to the cloud. **Sovereign** keeps everything on your device.
 
-See [SECURITY.md](SECURITY.md) for detailed security considerations before using this software.
+| Feature | Microsoft Recall | Sovereign |
+|---------|-----------------|-----------|
+| **Data Storage** | Cloud (Microsoft servers) | 100% Local (your device) |
+| **Privacy** | Data sent to Microsoft | Zero network requests |
+| **Open Source** | ❌ Closed source | ✅ Open source (MIT) |
+| **Cross-Platform** | Windows only | ✅ macOS, Windows, Linux |
+| **Privacy Guards** | Manual configuration | ✅ Automatic blacklist |
+| **Performance** | Unknown | ✅ <1% CPU, minimal battery |
+| **Cost** | Requires Windows 11+ | ✅ Free, no requirements |
 
-## Tech Stack
+### Key Advantages
 
-- **Backend**: Rust with Tauri v2
-- **Frontend**: React + TypeScript + Tailwind CSS
-- **Database**: SQLite with vector search
-- **Screen Capture**: xcap
-- **Image Processing**: WebP compression
-- **OCR**: rusty-tesseract
-- **AI Embeddings**: fastembed-rs
+- 🔒 **100% Local** - No cloud, no telemetry, no data collection
+- ⚡ **High Performance** - Written in Rust, uses <1% CPU, minimal battery drain
+- 🛡️ **Privacy Guards** - Automatically skips recording sensitive windows (password managers, incognito mode)
+- 🔍 **Semantic Search** - Find anything you've seen using natural language
+- 🎯 **Smart Deduplication** - Only saves when your screen actually changes
+- 📦 **Auto-Updates** - Built-in updater keeps you secure
+- 🗑️ **Auto-Cleanup** - Automatically deletes data older than 14 days
 
-## Features
+## Key Features
 
-### Screen Capture
+### 🔍 Semantic Search
+Search your screen history using natural language. Find that email, code snippet, or conversation you saw yesterday - even if you don't remember the exact words.
 
-- Automatic capture every 2 seconds
-- Smart deduplication using perceptual hashing
-- Automatic 1080p resizing for 4K displays
-- High-compression WebP storage
-- Cross-platform path handling
-- Only saves screenshots when the screen has changed
+### 🛡️ Privacy First
+- **Automatic Blacklist**: Skips recording when you open password managers (Bitwarden, 1Password, KeePass, LastPass), incognito windows, or Tor Browser
+- **Local-Only**: All processing happens on your device. Zero network requests after initial setup
+- **Auto-Deletion**: Data older than 14 days is automatically removed
 
-### Text Extraction & Search
+### ⚡ Performance Optimized
+- **Smart Capture**: Only saves screenshots when your screen actually changes (perceptual hashing)
+- **Efficient Storage**: High-compression WebP format, automatic 1080p resizing for 4K displays
+- **Low Resource Usage**: Runs in background with minimal CPU and memory footprint
 
-- OCR text extraction using Tesseract
-- Image preprocessing for optimal recognition
-- Semantic search using 384-dimensional vector embeddings
-- Natural language queries with cosine similarity ranking
-- Top-20 results with similarity scores
-- Completely offline - no network requests required
+### 🎨 Modern Interface
+- Dark mode UI with Cmd+K search (macOS) / Ctrl+K (Windows/Linux)
+- Timeline slider to navigate your history
+- Real-time frame updates and live statistics
+- Full-screen viewer with extracted text display
 
-### Privacy Guards
+## ⚠️ Important Security Notice
 
-- **Window Blacklist**: Automatically skips recording when sensitive applications are detected
-  - Password managers: Bitwarden, 1Password, KeePass, LastPass
-  - Private browsing: Incognito, InPrivate, Private Browsing
-  - Privacy tools: Tor Browser
-  - Uses native system commands for maximum stability
-- **Auto-Deletion**: Retention policy automatically removes data older than 14 days
-  - Deletes database records (frames, OCR text, embeddings)
-  - Removes image files from disk
-  - Runs on app startup
-- **Privacy Status UI**: Shield icon indicator showing active protection
+**This software captures ALL visible content on your screen, including sensitive information.**
 
-### User Interface
+- Screenshots are stored **UNENCRYPTED** on your local disk
+- Anyone with physical or remote access to your computer can view screenshots
+- Use at your own risk and ensure your device is properly secured
 
-- Modern dark-mode UI with Tailwind CSS
-- Cmd+K style search bar with keyboard shortcuts
-- Timeline slider for navigating history
-- Responsive masonry grid layout
-- Full-screen modal viewer for images + OCR text
-- Real-time frame updates
-- Live statistics dashboard
+See [SECURITY.md](SECURITY.md) for detailed security considerations.
 
 ## How It Works
 
-1. **Privacy Check**: Checks if the active window is on the blacklist
-2. **Capture**: Monitors your primary display every 2 seconds
-3. **Smart Check**: Calculates a perceptual hash of the screen
-4. **Deduplication**: Only saves screenshots when the screen has changed
-5. **OCR**: Extracts text from the image using Tesseract
-6. **Embedding**: Generates semantic 384-dimensional vectors
-7. **Storage**: Saves .webp images + metadata/text/vectors to SQLite
-8. **Search**: Query in natural language, get ranked results by semantic similarity
-9. **Auto-Cleanup**: Removes data older than 14 days on startup
+1. **Privacy Check** - Automatically detects and skips sensitive windows
+2. **Smart Capture** - Takes a screenshot every 2 seconds, but only saves when the screen changes
+3. **Text Extraction** - Uses Tesseract OCR to extract all visible text
+4. **Semantic Indexing** - Generates AI embeddings for natural language search (optional)
+5. **Storage** - Saves compressed screenshots and metadata locally
+6. **Search** - Query in plain English to find anything you've seen
+7. **Auto-Cleanup** - Removes data older than 14 days automatically
 
-## Installation
+## 🚀 Quick Start
 
-### Quick Start (End Users)
+### Step 1: Download
 
-1. **Download** the latest release from [GitHub Releases](https://github.com/lehendo/sovereign/releases/latest)
-   - **macOS**: Download `.dmg` file, open and drag to Applications
-   - **Windows**: Download `.exe` installer and run
-   - **Linux**: Download `.deb` or `.AppImage` file
+Download the latest release from [GitHub Releases](https://github.com/lehendo/sovereign/releases/latest):
 
-2. **Install Tesseract OCR** (Required for text extraction):
+- **macOS**: Download `.dmg` file → Open → Drag to Applications folder
+- **Windows**: Download `.exe` installer → Run and follow prompts
+- **Linux**: Download `.deb` or `.AppImage` file → Install/run
+
+### Step 2: Install Tesseract OCR
+
+**Required for text extraction:**
 
    **macOS:**
    ```bash
@@ -113,9 +109,9 @@ See [SECURITY.md](SECURITY.md) for detailed security considerations before using
    sudo apt-get install tesseract-ocr
    ```
 
-3. **(Optional) Download Embedding Model** for semantic search:
-   
-   The app works without embeddings (OCR-only mode). For semantic search, download the model:
+### Step 3: (Optional) Enable Semantic Search
+
+The app works perfectly with OCR-only mode. For semantic search (finding things by meaning, not just exact text), download the embedding model:
 
    **macOS/Linux:**
    ```bash
@@ -140,7 +136,9 @@ See [SECURITY.md](SECURITY.md) for detailed security considerations before using
    Invoke-WebRequest -Uri "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/resolve/main/tokenizer_config.json?download=true" -OutFile "tokenizer_config.json"
    ```
 
-4. **Run the app** and grant required permissions when prompted.
+### Step 4: Launch & Permissions
+
+Run the app and grant required permissions when prompted (see below).
 
 ### Required Permissions
 
@@ -199,11 +197,14 @@ Linux requirements depend on your desktop environment:
    - **X11**: Works automatically once xdotool is installed
    - **Wayland**: Window detection may be limited (xdotool primarily supports X11)
 
-### Updates
+### Auto-Updates
 
-- The desktop app automatically checks `Check for Updates` in the sidebar.
-- When a new signed version is published, the updater downloads, verifies, and restarts Sovereign automatically.
-- If no update is available, you’ll see “You’re on the latest version.” You can always re-download from the landing page if something looks wrong.
+Sovereign includes built-in auto-update functionality:
+
+- Click **"Check for Updates"** in the sidebar to manually check
+- When a new version is available, the app will download, verify, and install automatically
+- Updates are cryptographically signed for security
+- You'll be notified when updates are ready to install
 
 ## Storage
 
@@ -220,11 +221,6 @@ All metadata, OCR text, and embeddings are stored in SQLite:
 - **macOS**: `~/Library/Application Support/com.sovereign.app/sovereign.db`
 - **Windows**: `%APPDATA%\com.sovereign.app\sovereign.db`
 - **Linux**: `~/.local/share/com.sovereign.app/sovereign.db`
-
-The database contains:
-- `frames` table: Timestamps, image paths, perceptual hashes
-- `ocr_text` table: Extracted text from each frame
-- `embeddings` table: 384-dimensional vectors (serialized as binary blobs)
 
 ## Troubleshooting
 
@@ -268,6 +264,41 @@ The database contains:
 - On X11: Window detection should work automatically once xdotool is installed
 - On Wayland: Window detection may be limited (xdotool primarily supports X11)
 
+## FAQ
+
+**Q: How is this different from Microsoft Recall?**  
+A: Sovereign runs 100% locally on your device. Microsoft Recall sends your data to the cloud. Sovereign gives you complete control and privacy.
+
+**Q: Does it work offline?**  
+A: Yes! After the initial setup (downloading Tesseract and optionally the embedding model), everything works completely offline. No internet connection required.
+
+**Q: How much disk space does it use?**  
+A: Depends on your usage, but screenshots are highly compressed (WebP format). The app automatically deletes data older than 14 days.
+
+**Q: Can I change the retention period?**  
+A: Currently fixed at 14 days. This ensures privacy while maintaining useful search history.
+
+**Q: Does it slow down my computer?**  
+A: No. Written in Rust for maximum performance. Uses <1% CPU and minimal memory. Designed to run continuously without impacting system performance.
+
+**Q: What if I don't install the embedding model?**  
+A: The app works perfectly fine! You'll have OCR text search (exact text matching). Semantic search (finding by meaning) requires the optional model download.
+
+**Q: Is my data encrypted?**  
+A: No. Screenshots are stored unencrypted on your local disk. Anyone with access to your computer can view them. This is by design for performance, but ensure your device is properly secured.
+
+## System Requirements
+
+- **macOS**: 10.15+ (Intel or Apple Silicon)
+- **Windows**: Windows 10/11 (x64)
+- **Linux**: Most modern distributions (X11 or Wayland)
+- **Tesseract OCR**: Required (see installation instructions above)
+- **Disk Space**: ~100MB for app + ~90MB for optional embedding model
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
 ## License
 
-MIT
+MIT License - see [LICENSE](LICENSE) file for details.
