@@ -31,13 +31,13 @@ A privacy-first, local-only alternative to Microsoft Recall. Search everything y
 
 ### Key Advantages
 
-- 🔒 **100% Local** - No cloud, no telemetry, no data collection
-- ⚡ **High Performance** - Written in Rust, uses <1% CPU, minimal battery drain
-- 🛡️ **Privacy Guards** - Automatically skips recording sensitive windows (password managers, incognito mode)
-- 🔍 **Semantic Search** - Find anything you've seen using natural language
-- 🎯 **Smart Deduplication** - Only saves when your screen actually changes
-- 📦 **Auto-Updates** - Built-in updater keeps you secure
-- 🗑️ **Auto-Cleanup** - Automatically deletes data older than 14 days
+- **100% Local** - No cloud, no telemetry, no data collection
+- **High Performance** - Written in Rust, uses <1% CPU, minimal battery drain
+- **Privacy Guards** - Automatically skips recording sensitive windows (password managers, incognito mode)
+- **Semantic Search** - Find anything you've seen using natural language
+- **Smart Deduplication** - Only saves when your screen actually changes
+- **Auto-Updates** - Built-in updater keeps you secure
+- **Auto-Cleanup** - Automatically deletes data older than 14 days
 
 ## Key Features
 
@@ -54,13 +54,13 @@ Search your screen history using natural language. Find that email, code snippet
 - **Efficient Storage**: High-compression WebP format, automatic 1080p resizing for 4K displays
 - **Low Resource Usage**: Runs in background with minimal CPU and memory footprint
 
-### 🎨 Modern Interface
+### Modern Interface
 - Dark mode UI with Cmd+K search (macOS) / Ctrl+K (Windows/Linux)
 - Timeline slider to navigate your history
 - Real-time frame updates and live statistics
 - Full-screen viewer with extracted text display
 
-## ⚠️ Important Security Notice
+## Important Security Notice
 
 **This software captures ALL visible content on your screen, including sensitive information.**
 
@@ -80,7 +80,7 @@ See [SECURITY.md](SECURITY.md) for detailed security considerations.
 6. **Search** - Query in plain English to find anything you've seen
 7. **Auto-Cleanup** - Removes data older than 14 days automatically
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Step 1: Download
 
@@ -289,11 +289,33 @@ A: No. Screenshots are stored unencrypted on your local disk. Anyone with access
 
 ## System Requirements
 
-- **macOS**: 10.15+ (Intel or Apple Silicon)
-- **Windows**: Windows 10/11 (x64)
-- **Linux**: Most modern distributions (X11 or Wayland)
-- **Tesseract OCR**: Required (see installation instructions above)
+> **Note**: This app is actively tested on macOS Intel. Other platforms are built and should work, but may have platform-specific issues. Please report any problems you encounter.
+
+### macOS
+- **macOS 10.13 (High Sierra) or later**
+- **Intel (x86_64)**: ✅ Tested and working
+- **Apple Silicon (ARM64)**: ✅ Built and tested (M1, M2, M3, and later chips)
+- **Tesseract OCR**: Required (install via `brew install tesseract`)
+
+### Windows
+- **Windows 10** (version 1809 or later, x64) - ⚠️ Built but limited testing
+- **Windows 11** (all versions, x64) - ⚠️ Built but limited testing
+- **Tesseract OCR**: Required (download from [UB-Mannheim](https://github.com/UB-Mannheim/tesseract/wiki))
+
+### Linux
+- **Ubuntu**: 20.04 LTS or later - ⚠️ Built but limited testing
+- **Debian**: 11 (Bullseye) or later - ⚠️ Built but limited testing
+- **Fedora**: 34 or later - ⚠️ Built but limited testing
+- **Arch Linux**: Latest - ⚠️ Built but limited testing
+- **Other distributions**: Any modern distribution with WebKitGTK 2.0+ support
+- **Desktop Environment**: X11 or Wayland (GNOME, KDE, etc.)
+- **Tesseract OCR**: Required (install via package manager)
+- **xdotool**: Required for Privacy Guard (install via package manager)
+
+### All Platforms
 - **Disk Space**: ~100MB for app + ~90MB for optional embedding model
+- **RAM**: 512MB minimum (2GB+ recommended)
+- **Internet**: Required only for initial download and optional embedding model
 
 ## Contributing
 
