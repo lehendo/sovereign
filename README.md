@@ -41,10 +41,10 @@ A privacy-first, local-only alternative to Microsoft Recall. Search everything y
 
 ## Key Features
 
-### 🔍 Semantic Search
+### Semantic Search
 Search your screen history using natural language. Find that email, code snippet, or conversation you saw yesterday - even if you don't remember the exact words.
 
-### 🛡️ Privacy First
+### Privacy First
 - **Automatic Blacklist**: Skips recording when you open password managers (Bitwarden, 1Password, KeePass, LastPass), incognito windows, or Tor Browser
 - **Local-Only**: All processing happens on your device. Zero network requests after initial setup
 - **Auto-Deletion**: Data older than 14 days is automatically removed
