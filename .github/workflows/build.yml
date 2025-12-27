@@ -60,7 +60,8 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      - name: Build Tauri app
+      - name: Build Tauri app (standard targets)
+        if: matrix.target != 'aarch64-apple-darwin'
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -70,6 +71,22 @@ jobs:
         with:
           projectPath: .
           args: ${{ matrix.args }}
+
+      - name: Build Tauri app (ARM64 macOS workaround)
+        if: matrix.target == 'aarch64-apple-darwin'
+        env:
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+          TAURI_PUBLIC_KEY: ${{ secrets.TAURI_PUBLIC_KEY }}
+        run: |
+          # Set umask to ensure generated scripts are executable
+          umask 022
+          # Export it for child processes
+          export UMASK=022
+          # Build with explicit target
+          npm run tauri build -- --target aarch64-apple-darwin
+          # Fix permissions on any generated scripts (safety net)
+          find src-tauri/target/aarch64-apple-darwin/release/bundle -type f -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
