@@ -16,13 +16,9 @@ pub async fn search_frames(
     query: String,
     state: State<'_, AppState>,
 ) -> Result<Vec<SearchResult>, String> {
+    let query = query.trim();
     println!("Search query: '{}'", query);
 
-    if query.trim().is_empty() {
-        return Ok(vec![]);
-    }
-
-    let query = query.trim();
     if query.is_empty() {
         return Ok(vec![]);
     }
@@ -131,6 +127,23 @@ pub async fn get_recent_frames(
         .map_err(|e| format!("Failed to fetch recent frames: {}", e))?;
 
     println!("Retrieved {} recent frames", frames.len());
+
+    Ok(frames)
+}
+
+#[tauri::command]
+pub async fn get_frames_from_past_days(
+    days: i64,
+    state: State<'_, AppState>,
+) -> Result<Vec<FrameMetadata>, String> {
+    let db = state.database.lock()
+        .map_err(|_| "Database lock error".to_string())?;
+    
+    let frames = db
+        .get_frames_from_past_days(days)
+        .map_err(|e| format!("Failed to fetch frames from past {} days: {}", days, e))?;
+
+    println!("Retrieved {} frames from past {} days", frames.len(), days);
 
     Ok(frames)
 }

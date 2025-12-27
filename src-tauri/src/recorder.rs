@@ -705,7 +705,8 @@ impl ScreenRecorder {
         }
 
         let combined_img = if captured_images.len() == 1 {
-            captured_images.into_iter().next().unwrap()
+            // Safe unwrap: we just checked len() == 1
+            captured_images.into_iter().next().expect("Expected exactly one image")
         } else {
             let mut canvas = image::RgbaImage::new(total_width, max_height);
             let mut x_offset = 0u32;

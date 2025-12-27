@@ -31,7 +31,8 @@ function AppContent() {
   const { data: recentFrames = [], isLoading: isLoadingRecent, refetch: refetchRecentFrames } = useQuery<FrameMetadata[]>({
     queryKey: ["recentFrames"],
     queryFn: async () => {
-      return await invoke<FrameMetadata[]>("get_recent_frames", { limit: 50 });
+      // Get all frames from the past 14 days (matching retention policy)
+      return await invoke<FrameMetadata[]>("get_frames_from_past_days", { days: 14 });
     },
     refetchInterval: 5000,
   });

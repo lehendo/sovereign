@@ -78,6 +78,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .invoke_handler(tauri::generate_handler![
             commands::search_frames,
             commands::get_recent_frames,
+            commands::get_frames_from_past_days,
             commands::get_database_stats,
             commands::read_image_file,
         ])
