@@ -57,6 +57,12 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Bundle Tesseract for Windows
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          .\scripts\setup-tesseract-win.ps1
+
       - name: Build frontend
         run: npm run build
 
@@ -77,8 +83,13 @@ jobs:
           name: ${{ matrix.os }}-${{ matrix.arch }}
           path: |
             src-tauri/target/${{ matrix.target }}/release/bundle/**/*.dmg
+            src-tauri/target/release/bundle/**/*.dmg
             src-tauri/target/${{ matrix.target }}/release/bundle/**/*.app
+            src-tauri/target/release/bundle/**/*.app
             src-tauri/target/${{ matrix.target }}/release/bundle/**/*.msi
+            src-tauri/target/release/bundle/**/*.msi
             src-tauri/target/${{ matrix.target }}/release/bundle/**/*.deb
+            src-tauri/target/release/bundle/**/*.deb
             src-tauri/target/${{ matrix.target }}/release/bundle/**/*.AppImage
+            src-tauri/target/release/bundle/**/*.AppImage
 

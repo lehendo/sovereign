@@ -12,6 +12,9 @@
   "bundle": {
     "active": true,
     "targets": ["dmg", "app", "msi", "deb", "appimage"],
+    "resources": [
+      "resources/tesseract-win"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -31,9 +34,16 @@
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
       "timestampUrl": ""
+    },
+    "linux": {
+      "deb": {
+        "depends": [
+          "tesseract-ocr"
+        ]
+      }
     }
   },
-  "app": {
+"app": {
     "windows": [
       {
         "title": "Sovereign",
