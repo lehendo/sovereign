@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { QueryClient, QueryClientProvider, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery, useMutation } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { SearchBar } from "./components/SearchBar";
@@ -27,7 +27,6 @@ function AppContent() {
   const [searchResults, setSearchResults] = useState<FrameMetadata[]>([]);
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [timelineRange, setTimelineRange] = useState<{ start: number; end: number } | null>(null);
-  const queryClient = useQueryClient();
 
   const { data: recentFrames = [], isLoading: isLoadingRecent, refetch: refetchRecentFrames } = useQuery<FrameMetadata[]>({
     queryKey: ["recentFrames"],
