@@ -67,15 +67,22 @@ jobs:
         run: |
           brew install tesseract || echo "Tesseract installation failed or already installed"
 
-      - name: Install Tesseract (Windows)
+      - name: Verify winget availability (Windows)
         if: matrix.os == 'windows'
-        timeout-minutes: 5
+        shell: pwsh
         run: |
-          choco install tesseract -y
+          Write-Host "Checking winget availability..."
+          winget --version
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "winget is not available. This is required for Tesseract installation."
+            exit 1
+          }
+          Write-Host "✓ winget is available"
 
       - name: Bundle Tesseract for Windows
         if: matrix.os == 'windows'
         shell: pwsh
+        timeout-minutes: 10
         run: |
           .\scripts\setup-tesseract-win.ps1
 

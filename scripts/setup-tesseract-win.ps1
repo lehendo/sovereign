@@ -34,43 +34,173 @@ $INSTALLER_PATH = "$env:TEMP/tesseract-installer.exe"
 # Method 1: Try using winget (Windows Package Manager) - most reliable in CI
 Write-Host "Attempting to install Tesseract via winget (recommended for CI)..."
 try {
-    $wingetCheck = winget --version 2>&1
+    # Check if winget is available
+    $wingetVersion = winget --version 2>&1
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "Winget detected. Installing Tesseract OCR..."
-        winget install --id UB-Mannheim.TesseractOCR --silent --accept-package-agreements --accept-source-agreements 2>&1 | Out-Null
-        if ($LASTEXITCODE -eq 0) {
-            # Find the installed Tesseract location (usually in Program Files)
-            $possiblePaths = @(
-                "${env:ProgramFiles}\Tesseract-OCR",
-                "${env:ProgramFiles(x86)}\Tesseract-OCR"
-            )
-            foreach ($path in $possiblePaths) {
-                if (Test-Path "$path\tesseract.exe") {
-                    Write-Host "Found Tesseract installation at: $path"
-                    Write-Host "Copying Tesseract files to bundle directory..."
-                    Copy-Item -Path "$path\*" -Destination $TESSERACT_DIR -Recurse -Force
-                    $DOWNLOAD_SUCCESS = $true
-                    Write-Host "✓ Tesseract installed and bundled via winget"
-                    break
+        Write-Host "Winget detected (version: $wingetVersion). Installing Tesseract OCR..."
+        
+        # Try to install Tesseract via winget
+        $installOutput = winget install --id UB-Mannheim.TesseractOCR --silent --accept-package-agreements --accept-source-agreements 2>&1
+        $installExitCode = $LASTEXITCODE
+        
+        if ($installExitCode -eq 0) {
+            Write-Host "Winget installation completed. Searching for Tesseract installation..."
+            Write-Host "Installation output: $installOutput"
+            
+            # Wait longer for installation to complete and files to be written
+            Start-Sleep -Seconds 5
+            
+            # Refresh PATH to pick up newly installed executables
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+            
+            # Find the installed Tesseract location
+            $foundPath = $null
+            
+            # Try to get install location from winget first
+            try {
+                $wingetList = winget list --id UB-Mannheim.TesseractOCR 2>&1
+                if ($LASTEXITCODE -eq 0 -and $wingetList -match "Installed") {
+                    Write-Host "Tesseract is listed as installed by winget"
+                    # Try to get install location (winget doesn't directly provide this, but we know it's installed)
+                }
+            } catch {
+                Write-Host "Could not query winget for install status"
+            }
+            
+            # First, check if tesseract is in PATH (most reliable)
+            $tesseractInPath = (Get-Command tesseract -ErrorAction SilentlyContinue).Source
+            if ($tesseractInPath) {
+                $foundPath = Split-Path $tesseractInPath -Parent
+                Write-Host "Found Tesseract in PATH at: $foundPath"
+            }
+            
+            # If not in PATH, check common installation locations
+            if (-not $foundPath) {
+                $commonPaths = @(
+                    "${env:ProgramFiles}\Tesseract-OCR",
+                    "${env:ProgramFiles(x86)}\Tesseract-OCR"
+                )
+                
+                foreach ($path in $commonPaths) {
+                    $tesseractExe = Join-Path $path "tesseract.exe"
+                    if (Test-Path $tesseractExe) {
+                        $foundPath = $path
+                        Write-Host "Found Tesseract in common location: $foundPath"
+                        break
+                    }
+                }
+            }
+            
+            # If still not found, search Program Files recursively (slower but thorough)
+            if (-not $foundPath) {
+                Write-Host "Searching Program Files recursively for Tesseract..."
+                try {
+                    # Limit depth to avoid searching too deep (PowerShell 5.1+ supports -Depth)
+                    $searchParams = @{
+                        Path = "${env:ProgramFiles}"
+                        Filter = "tesseract.exe"
+                        Recurse = $true
+                        ErrorAction = "SilentlyContinue"
+                    }
+                    # Try with -Depth if available (PowerShell 5.1+), otherwise without
+                    try {
+                        $foundExe = Get-ChildItem @searchParams -Depth 3 | Select-Object -First 1
+                    } catch {
+                        $foundExe = Get-ChildItem @searchParams | Select-Object -First 1
+                    }
+                    
+                    if (-not $foundExe -and (Test-Path "${env:ProgramFiles(x86)}")) {
+                        $searchParams.Path = "${env:ProgramFiles(x86)}"
+                        try {
+                            $foundExe = Get-ChildItem @searchParams -Depth 3 | Select-Object -First 1
+                        } catch {
+                            $foundExe = Get-ChildItem @searchParams | Select-Object -First 1
+                        }
+                    }
+                    
+                    if ($foundExe) {
+                        $foundPath = $foundExe.DirectoryName
+                        Write-Host "Found Tesseract via recursive search: $foundPath"
+                    }
+                } catch {
+                    Write-Host "Recursive search failed: $_"
+                }
+            }
+            
+            if ($foundPath) {
+                Write-Host "Found Tesseract installation at: $foundPath"
+                Write-Host "Copying Tesseract files to bundle directory..."
+                Copy-Item -Path "$foundPath\*" -Destination $TESSERACT_DIR -Recurse -Force
+                $DOWNLOAD_SUCCESS = $true
+                Write-Host "✓ Tesseract installed and bundled via winget"
+            } else {
+                Write-Host "WARNING: Winget installation reported success but Tesseract location not found."
+                Write-Host "This might mean:"
+                Write-Host "  1. Installation is still in progress (waiting longer...)"
+                Write-Host "  2. Tesseract was installed to an unexpected location"
+                Write-Host "  3. Installation actually failed despite exit code 0"
+                Write-Host ""
+                Write-Host "Installation output was:"
+                Write-Host $installOutput
+                Write-Host ""
+                Write-Host "Attempting to find Tesseract with extended search..."
+                
+                # Wait a bit more and try again
+                Start-Sleep -Seconds 5
+                
+                # Try one more comprehensive search
+                $allDrives = Get-PSDrive -PSProvider FileSystem | Select-Object -ExpandProperty Root
+                foreach ($drive in $allDrives) {
+                    try {
+                        $foundExe = Get-ChildItem -Path $drive -Filter "tesseract.exe" -Recurse -ErrorAction SilentlyContinue -Depth 4 | Select-Object -First 1
+                        if ($foundExe) {
+                            $foundPath = $foundExe.DirectoryName
+                            Write-Host "Found Tesseract via extended search at: $foundPath"
+                            Copy-Item -Path "$foundPath\*" -Destination $TESSERACT_DIR -Recurse -Force
+                            $DOWNLOAD_SUCCESS = $true
+                            Write-Host "✓ Tesseract installed and bundled via winget (extended search)"
+                            break
+                        }
+                    } catch {
+                        # Skip drives that can't be accessed
+                        continue
+                    }
+                }
+                
+                if (-not $DOWNLOAD_SUCCESS) {
+                    Write-Host "Extended search also failed. Will try fallback methods..."
                 }
             }
         } else {
-            Write-Host "Winget installation returned non-zero exit code"
+            Write-Host "Winget installation failed with exit code $installExitCode"
+            Write-Host "Installation output: $installOutput"
         }
+    } else {
+        Write-Host "Winget check failed: $wingetVersion"
     }
 } catch {
-    Write-Host "Winget not available: $_"
+    Write-Host "Winget not available or error occurred: $_"
 }
 
 # Method 2: Try using Chocolatey if winget failed
 if (-not $DOWNLOAD_SUCCESS) {
-    Write-Host "Attempting to install Tesseract via Chocolatey..."
+    Write-Host ""
+    Write-Host "========================================"
+    Write-Host "Attempting fallback: Chocolatey"
+    Write-Host "========================================"
     try {
         $chocoCheck = choco --version 2>&1
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "Chocolatey detected. Installing Tesseract OCR..."
-            choco install tesseract -y --no-progress 2>&1 | Out-Null
-            if ($LASTEXITCODE -eq 0) {
+            Write-Host "Chocolatey detected (version: $chocoCheck). Installing Tesseract OCR..."
+            $chocoOutput = choco install tesseract -y --no-progress 2>&1
+            $chocoExitCode = $LASTEXITCODE
+            Write-Host "Chocolatey installation output: $chocoOutput"
+            
+            if ($chocoExitCode -eq 0) {
+                Start-Sleep -Seconds 3
+                # Refresh PATH
+                $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+                
                 # Find the installed Tesseract location
                 $tesseractPath = (Get-Command tesseract -ErrorAction SilentlyContinue).Source
                 if ($tesseractPath) {
@@ -80,11 +210,17 @@ if (-not $DOWNLOAD_SUCCESS) {
                     Copy-Item -Path "$tesseractInstallDir\*" -Destination $TESSERACT_DIR -Recurse -Force
                     $DOWNLOAD_SUCCESS = $true
                     Write-Host "✓ Tesseract installed and bundled via Chocolatey"
+                } else {
+                    Write-Host "Chocolatey installation succeeded but tesseract not found in PATH"
                 }
+            } else {
+                Write-Host "Chocolatey installation failed with exit code $chocoExitCode"
             }
+        } else {
+            Write-Host "Chocolatey not available: $chocoCheck"
         }
     } catch {
-        Write-Host "Chocolatey not available: $_"
+        Write-Host "Chocolatey check failed: $_"
     }
 }
 
@@ -117,14 +253,27 @@ if (-not $DOWNLOAD_SUCCESS) {
 }
 
 if (-not $DOWNLOAD_SUCCESS) {
-    Write-Error "Failed to install Tesseract using all available methods."
-    Write-Error "Tried:"
-    Write-Error "  1. winget install UB-Mannheim.TesseractOCR"
-    Write-Error "  2. choco install tesseract"
-    Write-Error "  3. Direct download (versions: $($TESSERACT_VERSIONS -join ', '))"
-    Write-Error ""
-    Write-Error "For CI environments, winget should be available on Windows runners."
-    Write-Error "Please check the GitHub Actions logs for specific error messages."
+    Write-Host ""
+    Write-Host "========================================"
+    Write-Host "ERROR: All installation methods failed"
+    Write-Host "========================================"
+    Write-Host ""
+    Write-Host "Tried the following methods:"
+    Write-Host "  1. winget install UB-Mannheim.TesseractOCR"
+    Write-Host "  2. choco install tesseract (if available)"
+    Write-Host "  3. Direct download (versions: $($TESSERACT_VERSIONS -join ', '))"
+    Write-Host ""
+    Write-Host "Troubleshooting steps:"
+    Write-Host "  - Verify winget is available: winget --version"
+    Write-Host "  - Check network connectivity"
+    Write-Host "  - Review the detailed output above for specific error messages"
+    Write-Host ""
+    Write-Host "For GitHub Actions:"
+    Write-Host "  - Windows runners should have winget pre-installed"
+    Write-Host "  - If winget fails, check if the package ID is correct: UB-Mannheim.TesseractOCR"
+    Write-Host "  - Check GitHub Actions logs for network or permission issues"
+    Write-Host ""
+    Write-Error "Failed to install Tesseract using all available methods. See output above for details."
     exit 1
 }
 
