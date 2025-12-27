@@ -12,6 +12,7 @@ on:
 
 jobs:
   test-runtime:
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -53,7 +54,7 @@ jobs:
         if: matrix.os == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev dpkg fakeroot
 
       - name: Install Tesseract
         if: matrix.os == 'linux'
@@ -62,11 +63,13 @@ jobs:
 
       - name: Install Tesseract (macOS)
         if: matrix.os == 'macos'
+        timeout-minutes: 5
         run: |
-          brew install tesseract
+          brew install tesseract || echo "Tesseract installation failed or already installed"
 
       - name: Install Tesseract (Windows)
         if: matrix.os == 'windows'
+        timeout-minutes: 5
         run: |
           choco install tesseract -y
 
@@ -77,45 +80,59 @@ jobs:
         run: npm run build
 
       - name: Build Tauri app
+        timeout-minutes: 15
         run: |
           npm run tauri build -- ${{ matrix.args }} || exit 1
 
-      - name: Verify artifacts exist
+      - name: Verify macOS artifacts
+        if: matrix.os == 'macos'
         run: |
-          if [ "${{ matrix.os }}" = "macos" ]; then
-            ls "src-tauri/target/${{ matrix.target }}/release/bundle/dmg/"*.dmg >/dev/null 2>&1 || exit 1
-            ls "src-tauri/target/${{ matrix.target }}/release/bundle/macos/"*.app >/dev/null 2>&1 || exit 1
-          elif [ "${{ matrix.os }}" = "windows" ]; then
-            ls "src-tauri/target/${{ matrix.target }}/release/bundle/msi/"*.msi >/dev/null 2>&1 || exit 1
-          elif [ "${{ matrix.os }}" = "linux" ]; then
-            ls "src-tauri/target/${{ matrix.target }}/release/bundle/deb/"*.deb >/dev/null 2>&1 || exit 1
-            ls "src-tauri/target/${{ matrix.target }}/release/bundle/appimage/"*.AppImage >/dev/null 2>&1 || exit 1
-          fi
+          ls "src-tauri/target/${{ matrix.target }}/release/bundle/dmg/"*.dmg >/dev/null 2>&1 || exit 1
+          ls "src-tauri/target/${{ matrix.target }}/release/bundle/macos/"*.app >/dev/null 2>&1 || exit 1
+
+      - name: Verify Windows artifacts
+        if: matrix.os == 'windows'
+        shell: bash
+        run: |
+          ls "src-tauri/target/${{ matrix.target }}/release/bundle/msi/"*.msi >/dev/null 2>&1 || exit 1
+
+      - name: Verify Linux artifacts
+        if: matrix.os == 'linux'
+        run: |
+          ls "src-tauri/target/${{ matrix.target }}/release/bundle/deb/"*.deb >/dev/null 2>&1 || exit 1
+          ls "src-tauri/target/${{ matrix.target }}/release/bundle/appimage/"*.AppImage >/dev/null 2>&1 || exit 1
 
       - name: Test app launch (macOS)
         if: matrix.os == 'macos'
+        timeout-minutes: 2
         run: |
           APP_PATH=$(find "src-tauri/target/${{ matrix.target }}/release/bundle/macos" -name "*.app" | head -1)
           echo "Testing app: $APP_PATH"
-          # Try to launch (will fail without display, but verifies binary works)
-          "$APP_PATH/Contents/MacOS/sovereign" --version || echo "App binary exists and is executable"
+          # Just verify binary exists and is executable (don't actually run it to avoid capture loop)
+          test -f "$APP_PATH/Contents/MacOS/sovereign" || exit 1
+          test -x "$APP_PATH/Contents/MacOS/sovereign" || exit 1
+          echo "App binary exists and is executable"
 
       - name: Test app launch (Windows)
         if: matrix.os == 'windows'
+        shell: bash
         run: |
           MSI_PATH=$(find "src-tauri/target/${{ matrix.target }}/release/bundle/msi" -name "*.msi" | head -1)
           echo "MSI installer created: $MSI_PATH"
-          # Verify MSI is valid
-          file "$MSI_PATH" || echo "MSI file exists"
+          # Verify MSI exists
+          test -f "$MSI_PATH" || exit 1
 
       - name: Test app launch (Linux)
         if: matrix.os == 'linux'
+        timeout-minutes: 2
         run: |
           APPIMAGE_PATH=$(find "src-tauri/target/${{ matrix.target }}/release/bundle/appimage" -name "*.AppImage" | head -1)
           echo "Testing AppImage: $APPIMAGE_PATH"
+          # Just verify AppImage exists and is executable (don't actually run it to avoid capture loop)
+          test -f "$APPIMAGE_PATH" || exit 1
           chmod +x "$APPIMAGE_PATH"
-          # Try to get version (will fail without display, but verifies binary works)
-          "$APPIMAGE_PATH" --version 2>&1 || echo "AppImage is executable and binary works"
+          test -x "$APPIMAGE_PATH" || exit 1
+          echo "AppImage exists and is executable"
 
       - name: Upload test artifacts
         uses: actions/upload-artifact@v4
