@@ -25,7 +25,7 @@ A privacy-first, local-only alternative to Microsoft Recall. Search everything y
 | **Privacy** | Data sent to Microsoft | Zero network requests |
 | **Open Source** | ❌ Closed source | ✅ Open source (MIT) |
 | **Cross-Platform** | Windows only | ✅ macOS, Windows, Linux |
-| **Privacy Guards** | Manual configuration | ✅ Automatic blacklist |
+| **Privacy Guards** | Manual configuration | ✅ Automatic blacklist (currently disabled) |
 | **Performance** | Unknown | ✅ <1% CPU, minimal battery |
 | **Cost** | Requires Windows 11+ | ✅ Free, no requirements |
 
@@ -33,11 +33,11 @@ A privacy-first, local-only alternative to Microsoft Recall. Search everything y
 
 - **100% Local** - No cloud, no telemetry, no data collection
 - **High Performance** - Written in Rust, uses <1% CPU, minimal battery drain
-- **Privacy Guards** - Automatically skips recording sensitive windows (password managers, incognito mode)
 - **Semantic Search** - Find anything you've seen using natural language
 - **Smart Deduplication** - Only saves when your screen actually changes
 - **Auto-Updates** - Built-in updater keeps you secure
 - **Auto-Cleanup** - Automatically deletes data older than 14 days
+- **Multi-Monitor Support** - Captures all connected displays
 
 ## Key Features
 
@@ -45,20 +45,22 @@ A privacy-first, local-only alternative to Microsoft Recall. Search everything y
 Search your screen history using natural language. Find that email, code snippet, or conversation you saw yesterday - even if you don't remember the exact words.
 
 ### Privacy First
-- **Automatic Blacklist**: Skips recording when you open password managers (Bitwarden, 1Password, KeePass, LastPass), incognito windows, or Tor Browser
 - **Local-Only**: All processing happens on your device. Zero network requests after initial setup
 - **Auto-Deletion**: Data older than 14 days is automatically removed
+- **Privacy Guards**: Currently disabled but code preserved for future use (see [Security](#security-considerations))
 
 ### Performance Optimized
 - **Smart Capture**: Only saves screenshots when your screen actually changes (perceptual hashing)
-- **Efficient Storage**: High-compression WebP format, automatic 1080p resizing for 4K displays
+- **Efficient Storage**: High-compression WebP format, automatic resizing for large displays (8K+)
 - **Low Resource Usage**: Runs in background with minimal CPU and memory footprint
+- **Multi-Monitor**: Automatically captures and combines all connected displays
 
 ### Modern Interface
 - Dark mode UI with Cmd+K search (macOS) / Ctrl+K (Windows/Linux)
 - Timeline slider to navigate your history
-- Real-time frame updates and live statistics
-- Full-screen viewer with extracted text display
+- Real-time frame updates (auto-refreshes when new screenshots are captured)
+- Full-screen viewer with zoom and pan capabilities
+- Extracted text display with OCR results
 
 ## Important Security Notice
 
@@ -67,13 +69,14 @@ Search your screen history using natural language. Find that email, code snippet
 - Screenshots are stored **UNENCRYPTED** on your local disk
 - Anyone with physical or remote access to your computer can view screenshots
 - Use at your own risk and ensure your device is properly secured
+- **Privacy Guard is currently disabled** - all windows are captured regardless of content
 
 See [SECURITY.md](SECURITY.md) for detailed security considerations.
 
 ## How It Works
 
-1. **Privacy Check** - Automatically detects and skips sensitive windows
-2. **Smart Capture** - Takes a screenshot every 2 seconds, but only saves when the screen changes
+1. **Smart Capture** - Takes a screenshot every 2 seconds, but only saves when the screen changes
+2. **Multi-Monitor** - Automatically detects and captures all connected displays
 3. **Text Extraction** - Uses Tesseract OCR to extract all visible text
 4. **Semantic Indexing** - Generates AI embeddings for natural language search (optional)
 5. **Storage** - Saves compressed screenshots and metadata locally
@@ -87,8 +90,17 @@ See [SECURITY.md](SECURITY.md) for detailed security considerations.
 Download the latest release from [GitHub Releases](https://github.com/lehendo/sovereign/releases/latest):
 
 - **macOS**: Download `.dmg` file → Open → Drag to Applications folder
-- **Windows**: Download `.exe` installer → Run and follow prompts
+  - **First Launch**: If you see "cannot be opened because the developer cannot be verified":
+    1. Right-click the app in Applications → Select "Open"
+    2. Click "Open" in the dialog that appears
+    3. Alternatively: System Settings → Privacy & Security → Scroll down → Click "Open Anyway" next to Sovereign
+- **Windows**: Download `.msi` installer → Run and follow prompts
+  - **First Launch**: If Windows SmartScreen blocks the app:
+    1. Click "More info" on the warning screen
+    2. Click "Run anyway" button
+    3. The installer will proceed normally
 - **Linux**: Download `.deb` or `.AppImage` file → Install/run
+  - **AppImage**: Make executable with `chmod +x Sovereign_*.AppImage` before running
 
 ### Step 2: Install Tesseract OCR
 
@@ -140,6 +152,74 @@ The app works perfectly with OCR-only mode. For semantic search (finding things 
 
 Run the app and grant required permissions when prompted (see below).
 
+## Local Development / Building from Source
+
+If you prefer to build and run the app locally instead of downloading pre-built binaries:
+
+### Prerequisites
+
+- **Node.js**: 20.19.0+ or 22.12.0+ ([Download](https://nodejs.org/))
+- **Rust**: Latest stable version ([Install via rustup](https://rustup.rs/))
+- **Tauri CLI**: Will be installed automatically via npm
+- **Tesseract OCR**: Required (see installation instructions above)
+- **System Dependencies**:
+  - **macOS**: Xcode Command Line Tools (`xcode-select --install`)
+  - **Windows**: Microsoft Visual C++ Build Tools
+  - **Linux**: `libwebkit2gtk-4.0-dev`, `build-essential`, `curl`, `wget`, `libssl-dev`, `libgtk-3-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`
+
+### Installation Steps
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/lehendo/sovereign.git
+   cd sovereign
+   ```
+
+2. **Install Node.js dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Install Rust dependencies** (automatic on first build):
+   ```bash
+   cd src-tauri
+   cargo build
+   cd ..
+   ```
+
+4. **Run in development mode:**
+   ```bash
+   npm run tauri dev
+   ```
+   This will:
+   - Start the Vite dev server for the frontend
+   - Build and run the Tauri app
+   - Enable hot-reload for both frontend and backend changes
+
+5. **Build for production:**
+   ```bash
+   # Build for current platform
+   npm run tauri build
+   
+   # Or build for specific platforms:
+   npm run tauri:build:macos        # macOS Intel
+   npm run tauri:build:macos-arm    # macOS Apple Silicon
+   npm run tauri:build:windows      # Windows
+   npm run tauri:build:linux        # Linux
+   ```
+
+   Built binaries will be in `src-tauri/target/release/bundle/`
+
+### Development Notes
+
+- **Frontend**: React + TypeScript + Vite, located in `src/`
+- **Backend**: Rust, located in `src-tauri/src/`
+- **Hot Reload**: Frontend changes reload automatically, Rust changes require app restart
+- **Debugging**: 
+  - Frontend: Use browser DevTools (right-click → Inspect)
+  - Backend: Check terminal output for Rust logs
+- **Database**: SQLite database is created automatically in app data directory
+
 ### Required Permissions
 
 #### macOS
@@ -149,14 +229,8 @@ When the app first runs, macOS will prompt for permissions:
 1. **Screen Recording Permission** (Required):
    - Click "Open System Settings" when prompted
    - Go to **System Settings > Privacy & Security > Screen Recording**
-   - Enable "Sovereign"
+   - Enable "Sovereign" (or "Terminal" if running from terminal)
    - Restart the app
-
-2. **Accessibility Permission** (Required for Privacy Guard):
-   - Go to **System Settings > Privacy & Security > Accessibility**
-   - Enable "Sovereign"
-   - This allows the app to detect active window titles for blacklist checking
-   - Restart the app after enabling
 
 #### Windows
 
@@ -166,10 +240,6 @@ Windows may prompt for permissions on first run:
    - Windows 10/11 will typically prompt automatically when the app first attempts screen capture
    - If prompted, click "Yes" to allow screen recording
    - You may need to grant permission in **Settings > Privacy > Screen recording** (Windows 11)
-
-2. **Window Detection** (For Privacy Guard):
-   - No special permissions required
-   - Uses PowerShell with Win32 API (works automatically)
 
 #### Linux
 
@@ -182,21 +252,6 @@ Linux requirements depend on your desktop environment:
      - **KDE**: Usually works automatically
    - If screen capture fails, ensure your user has access to the X server or Wayland session
 
-2. **Window Detection** (For Privacy Guard):
-   - Requires `xdotool` to be installed:
-     ```bash
-     # Ubuntu/Debian
-     sudo apt-get install xdotool
-     
-     # Fedora
-     sudo dnf install xdotool
-     
-     # Arch Linux
-     sudo pacman -S xdotool
-     ```
-   - **X11**: Works automatically once xdotool is installed
-   - **Wayland**: Window detection may be limited (xdotool primarily supports X11)
-
 ### Auto-Updates
 
 Sovereign includes built-in auto-update functionality:
@@ -205,6 +260,8 @@ Sovereign includes built-in auto-update functionality:
 - When a new version is available, the app will download, verify, and install automatically
 - Updates are cryptographically signed for security
 - You'll be notified when updates are ready to install
+
+**Note**: Auto-updates require `latest.json` to be present in GitHub releases. If you're building from source, you'll need to generate this file manually or disable auto-updates.
 
 ## Storage
 
@@ -222,7 +279,90 @@ All metadata, OCR text, and embeddings are stored in SQLite:
 - **Windows**: `%APPDATA%\com.sovereign.app\sovereign.db`
 - **Linux**: `~/.local/share/com.sovereign.app/sovereign.db`
 
+## Security Considerations
+
+### Current Security Status
+
+✅ **Secure:**
+- No hardcoded credentials or API keys
+- No network requests for data (only for updates and optional model download)
+- All data stored locally
+- Proper permission scoping in Tauri capabilities
+- Input validation on search queries (max 1000 characters)
+- SQL injection protection via parameterized queries (rusqlite)
+
+⚠️ **Security Notes:**
+- **Privacy Guard is currently disabled** - All windows are captured regardless of content
+- Screenshots stored unencrypted on disk
+- Asset protocol scope is permissive (`$APPDATA/**`) - necessary for app functionality
+- Console logging present (debug info only, no sensitive data)
+- No authentication required to view screenshots
+
+### Data Privacy
+
+- **All data stays local:** No telemetry, no cloud uploads, no network requests for data
+- **Storage location:** Screenshots are saved to your OS's application data directory
+- **No encryption:** Screenshots are currently stored as plain .webp files
+- **No access controls:** Any user on your system can read the screenshots
+- **Auto-deletion:** Data older than 14 days is automatically removed
+
+### Recommendations
+
+1. **Do NOT use this software if you:**
+   - Work with classified or highly sensitive information
+   - Handle financial data, healthcare records, or legal documents
+   - Are in a shared computer environment
+
+2. **Best Practices:**
+   - Regularly review and delete old screenshots
+   - Be aware of what's on your screen when the app is running
+   - Keep your computer physically secure
+   - Use full disk encryption on your OS
+
 ## Troubleshooting
+
+### "Sovereign cannot be opened because the developer cannot be verified" (macOS)
+
+This is macOS Gatekeeper blocking unsigned apps. To fix:
+
+**Method 1 (Recommended):**
+1. Right-click the Sovereign app in Applications folder
+2. Select "Open" from the context menu
+3. Click "Open" in the security dialog
+4. The app will now open normally (you only need to do this once)
+
+**Method 2:**
+1. Go to **System Settings → Privacy & Security**
+2. Scroll down to find a message about Sovereign being blocked
+3. Click **"Open Anyway"** button
+4. Confirm by clicking "Open" in the dialog
+
+**Why this happens:** Sovereign is open-source and not code-signed with an Apple Developer certificate (which costs $99/year). The app is safe to use - you can verify the source code on GitHub.
+
+### "Windows protected your PC" / SmartScreen Warning (Windows)
+
+Windows SmartScreen may block unsigned installers. To fix:
+
+1. When you see "Windows protected your PC" warning, click **"More info"**
+2. Click **"Run anyway"** button
+3. The installer will proceed normally
+
+**Why this happens:** Sovereign is not code-signed with a Windows code signing certificate (which costs ~$200-400/year). The app is safe to use - you can verify the source code on GitHub.
+
+### AppImage won't run (Linux)
+
+If the AppImage file won't execute:
+
+1. Make it executable:
+   ```bash
+   chmod +x Sovereign_*.AppImage
+   ```
+2. Then run it:
+   ```bash
+   ./Sovereign_*.AppImage
+   ```
+
+**Note:** Linux doesn't have code signing requirements like macOS/Windows. This is just a file permissions issue.
 
 ### "Tesseract not found"
 - Make sure Tesseract is installed (see Installation instructions above)
@@ -246,23 +386,15 @@ All metadata, OCR text, and embeddings are stored in SQLite:
 - Small, blurry, or stylized text may not be recognized accurately
 - This is a limitation of OCR technology, not a bug
 
-### Privacy Guard not working
+### Images not loading (403 errors)
+- The app uses Tauri's asset protocol to serve images
+- If you see 403 errors in the console, the app will automatically fall back to reading files directly
+- This is expected behavior and images should still display correctly
 
-**macOS:**
-- Ensure both Screen Recording and Accessibility permissions are enabled (see Required Permissions above)
-- Go to **System Settings > Privacy & Security > Accessibility** and enable "Sovereign"
-- Restart the app after enabling Accessibility permission
-- Privacy Guard requires both permissions to function
-
-**Windows:**
-- Window detection should work automatically
-- If Privacy Guard fails, ensure the app has necessary permissions
-- Try restarting the app
-
-**Linux:**
-- Ensure `xdotool` is installed (see Required Permissions above)
-- On X11: Window detection should work automatically once xdotool is installed
-- On Wayland: Window detection may be limited (xdotool primarily supports X11)
+### Auto-refresh not working
+- The app uses Tauri events to automatically refresh when new screenshots are captured
+- If auto-refresh isn't working, check the browser console for event listener setup messages
+- The app will still poll every 5 seconds as a fallback
 
 ## FAQ
 
@@ -287,9 +419,13 @@ A: The app works perfectly fine! You'll have OCR text search (exact text matchin
 **Q: Is my data encrypted?**  
 A: No. Screenshots are stored unencrypted on your local disk. Anyone with access to your computer can view them. This is by design for performance, but ensure your device is properly secured.
 
-## System Requirements
+**Q: Why is Privacy Guard disabled?**  
+A: Privacy Guard functionality is currently commented out but preserved in the codebase. It can be re-enabled in future versions. Currently, all windows are captured regardless of content.
 
-> **Note**: This app is actively tested on macOS Intel. Other platforms are built and should work, but may have platform-specific issues. Please report any problems you encounter.
+**Q: Does it work with multiple monitors?**  
+A: Yes! The app automatically detects and captures all connected displays, combining them into a single screenshot.
+
+## System Requirements
 
 ### macOS
 - **macOS 10.13 (High Sierra) or later**
@@ -310,7 +446,6 @@ A: No. Screenshots are stored unencrypted on your local disk. Anyone with access
 - **Other distributions**: Any modern distribution with WebKitGTK 2.0+ support
 - **Desktop Environment**: X11 or Wayland (GNOME, KDE, etc.)
 - **Tesseract OCR**: Required (install via package manager)
-- **xdotool**: Required for Privacy Guard (install via package manager)
 
 ### All Platforms
 - **Disk Space**: ~100MB for app + ~90MB for optional embedding model

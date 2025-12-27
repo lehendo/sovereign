@@ -39,32 +39,44 @@ export function Timeline({
   const startValue = range?.start ?? min;
   const endValue = range?.end ?? max;
 
-  const formatTimestamp = (value: number) =>
-    new Date(value * 1000).toLocaleString(undefined, {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-  const clampStart = (value: number) => {
-    const clamped = Math.max(min, Math.min(value, max - MIN_WINDOW_SECONDS));
-    return Math.min(clamped, endValue - MIN_WINDOW_SECONDS);
-  };
-
-  const clampEnd = (value: number) => {
-    const clamped = Math.min(max, Math.max(value, min + MIN_WINDOW_SECONDS));
-    return Math.max(clamped, startValue + MIN_WINDOW_SECONDS);
+  const formatTimestamp = (value: number) => {
+    if (!isFinite(value) || isNaN(value)) return "Invalid date";
+    try {
+      return new Date(value * 1000).toLocaleString(undefined, {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (e) {
+      return "Invalid date";
+    }
   };
 
   const handleStartChange = (value: number) => {
-    const newStart = clampStart(value);
-    onRangeChange(newStart, endValue);
+    if (isNaN(value) || !isFinite(value)) return;
+    
+    const numValue = Number(value);
+    const currentEnd = range?.end ?? max;
+    const newStart = Math.max(
+      min,
+      Math.min(numValue, currentEnd - MIN_WINDOW_SECONDS, max - MIN_WINDOW_SECONDS)
+    );
+    
+    onRangeChange(newStart, currentEnd);
   };
 
   const handleEndChange = (value: number) => {
-    const newEnd = clampEnd(value);
-    onRangeChange(startValue, newEnd);
+    if (isNaN(value) || !isFinite(value)) return;
+    
+    const numValue = Number(value);
+    const currentStart = range?.start ?? min;
+    const newEnd = Math.min(
+      max,
+      Math.max(numValue, currentStart + MIN_WINDOW_SECONDS, min + MIN_WINDOW_SECONDS)
+    );
+    
+    onRangeChange(currentStart, newEnd);
   };
 
   return (
@@ -87,6 +99,7 @@ export function Timeline({
             type="range"
             min={min}
             max={max - MIN_WINDOW_SECONDS}
+            step={1}
             value={startValue}
             onChange={(e) => handleStartChange(Number(e.target.value))}
             className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
@@ -102,6 +115,7 @@ export function Timeline({
             type="range"
             min={min + MIN_WINDOW_SECONDS}
             max={max}
+            step={1}
             value={endValue}
             onChange={(e) => handleEndChange(Number(e.target.value))}
             className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"

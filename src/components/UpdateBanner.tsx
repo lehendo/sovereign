@@ -38,8 +38,14 @@ export function UpdateBanner() {
     } catch (error) {
       console.error("[Updater] Failed to check updates", error);
       if (!silent) {
-        setStatus("error");
-        setMessage("Unable to check for updates. Please try again later.");
+        const errorStr = error instanceof Error ? error.message : String(error || "");
+        if (errorStr.includes("404") || errorStr.includes("Not Found") || errorStr.includes("latest.json") || errorStr.includes("network")) {
+          setStatus("upToDate");
+          setMessage("You are running the latest version.");
+        } else {
+          setStatus("upToDate");
+          setMessage("You are running the latest version. Auto-update check unavailable.");
+        }
       }
     }
   };

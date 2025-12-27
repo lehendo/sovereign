@@ -10,14 +10,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .setup(|app| {
             let app_handle = app.handle().clone();
             
-            let db_path = app_handle
+            let app_data_dir = app_handle
                 .path()
                 .app_data_dir()
                 .map_err(|e| {
                     eprintln!("FATAL: Failed to get app data directory: {:#}", e);
                     format!("Failed to get app data directory: {}", e)
-                })?
-                .join("sovereign.db");
+                })?;
+            
+            println!("App data directory location: {}", app_data_dir.display());
+            
+            // Ensure the app data directory exists
+            if !app_data_dir.exists() {
+                std::fs::create_dir_all(&app_data_dir)
+                    .map_err(|e| {
+                        eprintln!("FATAL: Failed to create app data directory: {:#}", e);
+                        format!("Failed to create app data directory: {}", e)
+                    })?;
+            }
+            
+            let db_path = app_data_dir.join("sovereign.db");
 
             let database = Database::new(db_path)
                 .map_err(|e| {
@@ -67,6 +79,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             commands::search_frames,
             commands::get_recent_frames,
             commands::get_database_stats,
+            commands::read_image_file,
         ])
         .run(tauri::generate_context!())
         .map_err(|e| {

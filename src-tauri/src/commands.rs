@@ -149,4 +149,27 @@ pub async fn get_database_stats(
     Ok(stats)
 }
 
+#[tauri::command]
+pub async fn read_image_file(path: String) -> Result<String, String> {
+    use std::fs;
+    use base64::engine::general_purpose;
+    use base64::Engine;
+    
+    let file_data = fs::read(&path)
+        .map_err(|e| format!("Failed to read image file: {}", e))?;
+    
+    let base64_data = general_purpose::STANDARD.encode(&file_data);
+    let mime_type = if path.ends_with(".webp") {
+        "image/webp"
+    } else if path.ends_with(".png") {
+        "image/png"
+    } else if path.ends_with(".jpg") || path.ends_with(".jpeg") {
+        "image/jpeg"
+    } else {
+        "image/webp"
+    };
+    
+    Ok(format!("data:{};base64,{}", mime_type, base64_data))
+}
+
 

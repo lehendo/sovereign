@@ -48,8 +48,7 @@
       "assetProtocol": {
         "enable": true,
         "scope": [
-          "$APPDATA/com.sovereign.app/**",
-          "$APPDATA/com.sovereign.app/screenshots/**"
+          "$APPDATA/**"
         ]
       }
     },
