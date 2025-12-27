@@ -63,6 +63,13 @@ jobs:
         run: |
           .\scripts\setup-tesseract-win.ps1
 
+      - name: Create placeholder tesseract-win directory (non-Windows)
+        if: matrix.os != 'windows'
+        run: |
+          mkdir -p src-tauri/resources/tesseract-win
+          # Create a placeholder file so the directory isn't empty
+          touch src-tauri/resources/tesseract-win/.gitkeep
+
       - name: Build frontend
         run: npm run build
 

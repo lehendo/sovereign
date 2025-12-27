@@ -73,6 +73,19 @@ jobs:
         run: |
           choco install tesseract -y
 
+      - name: Bundle Tesseract for Windows
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          .\scripts\setup-tesseract-win.ps1
+
+      - name: Create placeholder tesseract-win directory (non-Windows)
+        if: matrix.os != 'windows'
+        run: |
+          mkdir -p src-tauri/resources/tesseract-win
+          # Create a placeholder file so the directory isn't empty
+          touch src-tauri/resources/tesseract-win/.gitkeep
+
       - name: Install frontend dependencies
         run: npm ci
 
@@ -82,7 +95,7 @@ jobs:
       - name: Build Tauri app
         timeout-minutes: 15
         run: |
-          npm run tauri build -- ${{ matrix.args }} || exit 1
+          npm run tauri build -- ${{ matrix.args }}
 
       - name: Verify macOS artifacts
         if: matrix.os == 'macos'
