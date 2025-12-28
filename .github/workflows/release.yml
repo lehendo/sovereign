@@ -219,26 +219,8 @@ jobs:
           # Create latest.json
           LATEST_JSON="${ARTIFACT_DIR}/latest.json"
           PUB_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          cat > "$LATEST_JSON" << 'JSONEOF'
-{
-  "version": "VERSION_PLACEHOLDER",
-  "notes": "See the assets to download this version and install.",
-  "pub_date": "DATE_PLACEHOLDER",
-  "platforms": {
-    "PLATFORM_PLACEHOLDER": {
-      "signature": "SIGNATURE_PLACEHOLDER",
-      "url": "URL_PLACEHOLDER"
-    }
-  }
-}
-JSONEOF
-          # Replace placeholders
-          sed -i.bak "s|VERSION_PLACEHOLDER|$VERSION|g" "$LATEST_JSON"
-          sed -i.bak "s|DATE_PLACEHOLDER|$PUB_DATE|g" "$LATEST_JSON"
-          sed -i.bak "s|PLATFORM_PLACEHOLDER|${PLATFORM}-${ARCH}|g" "$LATEST_JSON"
-          sed -i.bak "s|SIGNATURE_PLACEHOLDER|$SIGNATURE|g" "$LATEST_JSON"
-          sed -i.bak "s|URL_PLACEHOLDER|$RELEASE_URL|g" "$LATEST_JSON"
-          rm -f "${LATEST_JSON}.bak"
+          # Use printf to avoid YAML heredoc issues
+          printf '{\n  "version": "%s",\n  "notes": "See the assets to download this version and install.",\n  "pub_date": "%s",\n  "platforms": {\n    "%s-%s": {\n      "signature": "%s",\n      "url": "%s"\n    }\n  }\n}' "$VERSION" "$PUB_DATE" "$PLATFORM" "$ARCH" "$SIGNATURE" "$RELEASE_URL" > "$LATEST_JSON"
           
           echo "Generated latest.json:"
           cat "$LATEST_JSON"
