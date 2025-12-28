@@ -39,12 +39,19 @@ export function UpdateBanner() {
       console.error("[Updater] Failed to check updates", error);
       if (!silent) {
         const errorStr = error instanceof Error ? error.message : String(error || "");
-        if (errorStr.includes("404") || errorStr.includes("Not Found") || errorStr.includes("latest.json") || errorStr.includes("network")) {
-          setStatus("upToDate");
-          setMessage("You are running the latest version.");
+        console.error("[Updater] Error details:", errorStr);
+        if (errorStr.includes("404") || errorStr.includes("Not Found") || errorStr.includes("latest.json")) {
+          setStatus("error");
+          setMessage(`Update check failed: latest.json not found. Error: ${errorStr.substring(0, 100)}`);
+        } else if (errorStr.includes("network") || errorStr.includes("fetch")) {
+          setStatus("error");
+          setMessage("Network error: Unable to reach update server. Check your internet connection.");
+        } else if (errorStr.includes("signature") || errorStr.includes("pubkey") || errorStr.includes("key")) {
+          setStatus("error");
+          setMessage("Signature verification failed. Please download updates manually from GitHub.");
         } else {
-          setStatus("upToDate");
-          setMessage("You are running the latest version. Auto-update check unavailable.");
+          setStatus("error");
+          setMessage(`Unable to check for updates: ${errorStr.substring(0, 80)}`);
         }
       }
     }
