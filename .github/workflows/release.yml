@@ -60,6 +60,32 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Verify winget availability (Windows)
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          Write-Host "Checking winget availability..."
+          winget --version
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "winget is not available. This is required for Tesseract installation."
+            exit 1
+          }
+          Write-Host "✓ winget is available"
+
+      - name: Bundle Tesseract for Windows
+        if: matrix.os == 'windows'
+        shell: pwsh
+        timeout-minutes: 10
+        run: |
+          .\scripts\setup-tesseract-win.ps1
+
+      - name: Create placeholder tesseract-win directory (non-Windows)
+        if: matrix.os != 'windows'
+        run: |
+          mkdir -p src-tauri/resources/tesseract-win
+          # Create a placeholder file so the directory isn't empty
+          touch src-tauri/resources/tesseract-win/.gitkeep
+
       - name: Build frontend
         run: npm run build
 
