@@ -9,7 +9,10 @@
     "core:window:allow-close",
     "core:window:allow-minimize",
     "core:app:default",
-    "core:path:default"
+    "core:path:default",
+    "updater:default",
+    "updater:allow-check",
+    "updater:allow-install"
   ]
 }
 

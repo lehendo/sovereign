@@ -285,6 +285,43 @@ impl Database {
         Ok(frames)
     }
 
+    pub fn get_frames_from_past_days(&self, days: i64) -> Result<Vec<FrameMetadata>> {
+        use std::time::{SystemTime, UNIX_EPOCH};
+
+        if days < 0 || days > 365 {
+            return Err(anyhow::anyhow!("Invalid retention period: must be between 0 and 365 days"));
+        }
+
+        let current_timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .context("Failed to get current timestamp")?
+            .as_secs() as i64;
+
+        let cutoff_timestamp = current_timestamp - (days * 24 * 60 * 60);
+
+        let mut stmt = self.conn.prepare(
+            "SELECT f.id, f.timestamp, f.image_path, f.app_name, f.window_title, o.raw_text
+             FROM frames f
+             LEFT JOIN ocr_text o ON f.id = o.frame_id
+             WHERE f.timestamp >= ?1
+             ORDER BY f.timestamp DESC"
+        )?;
+
+        let frames = stmt.query_map([cutoff_timestamp], |row| {
+            Ok(FrameMetadata {
+                frame_id: row.get(0)?,
+                timestamp: row.get(1)?,
+                image_path: row.get(2)?,
+                app_name: row.get(3)?,
+                window_title: row.get(4)?,
+                ocr_text: row.get(5)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(frames)
+    }
+
     pub fn prune_old_data(&self, days: i64) -> Result<usize> {
         use std::time::{SystemTime, UNIX_EPOCH};
 

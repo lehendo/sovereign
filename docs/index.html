@@ -32,6 +32,7 @@
                 <div class="hidden md:flex items-center gap-8">
                     <a href="#features" class="hover:text-indigo-400 transition-colors">Features</a>
                     <a href="#privacy" class="hover:text-indigo-400 transition-colors">Privacy</a>
+                    <a href="#faq" class="hover:text-indigo-400 transition-colors">FAQ</a>
                     <a href="#install" class="hover:text-indigo-400 transition-colors">Install</a>
                     <a href="https://github.com/lehendo/sovereign" class="text-slate-400 hover:text-white transition-colors">
                         <i data-lucide="github" class="w-5 h-5"></i>
@@ -166,6 +167,116 @@
         </div>
     </section>
 
+    <section id="faq" class="py-24 bg-slate-900/50">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl font-bold text-white">Frequently Asked Questions</h2>
+                <p class="text-slate-400 mt-2">Everything you need to know about Sovereign</p>
+            </div>
+            <div class="space-y-4">
+                <div class="faq-item rounded-xl glass border border-slate-800 overflow-hidden">
+                    <button class="faq-question w-full text-left p-6 flex items-center justify-between hover:bg-slate-800/50 transition-colors group" onclick="toggleFaq(this)">
+                        <span class="font-semibold text-white text-lg">How is this different from Microsoft Recall?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 group-hover:text-indigo-400 transition-transform faq-icon"></i>
+                    </button>
+                    <div class="faq-answer hidden overflow-hidden">
+                        <div class="px-6 pb-6 text-slate-400">
+                            Sovereign runs 100% locally on your device. Microsoft Recall sends your data to the cloud. Sovereign gives you complete control and privacy.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item rounded-xl glass border border-slate-800 overflow-hidden">
+                    <button class="faq-question w-full text-left p-6 flex items-center justify-between hover:bg-slate-800/50 transition-colors group" onclick="toggleFaq(this)">
+                        <span class="font-semibold text-white text-lg">Does it work offline?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 group-hover:text-indigo-400 transition-transform faq-icon"></i>
+                    </button>
+                    <div class="faq-answer hidden overflow-hidden">
+                        <div class="px-6 pb-6 text-slate-400">
+                            Yes! After the initial setup (downloading Tesseract and optionally the embedding model), everything works completely offline. No internet connection required.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item rounded-xl glass border border-slate-800 overflow-hidden">
+                    <button class="faq-question w-full text-left p-6 flex items-center justify-between hover:bg-slate-800/50 transition-colors group" onclick="toggleFaq(this)">
+                        <span class="font-semibold text-white text-lg">How much disk space does it use?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 group-hover:text-indigo-400 transition-transform faq-icon"></i>
+                    </button>
+                    <div class="faq-answer hidden overflow-hidden">
+                        <div class="px-6 pb-6 text-slate-400">
+                            Depends on your usage, but screenshots are highly compressed (WebP format). The app automatically deletes data older than 14 days.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item rounded-xl glass border border-slate-800 overflow-hidden">
+                    <button class="faq-question w-full text-left p-6 flex items-center justify-between hover:bg-slate-800/50 transition-colors group" onclick="toggleFaq(this)">
+                        <span class="font-semibold text-white text-lg">Can I change the retention period?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 group-hover:text-indigo-400 transition-transform faq-icon"></i>
+                    </button>
+                    <div class="faq-answer hidden overflow-hidden">
+                        <div class="px-6 pb-6 text-slate-400">
+                            Currently fixed at 14 days. This ensures privacy while maintaining useful search history.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item rounded-xl glass border border-slate-800 overflow-hidden">
+                    <button class="faq-question w-full text-left p-6 flex items-center justify-between hover:bg-slate-800/50 transition-colors group" onclick="toggleFaq(this)">
+                        <span class="font-semibold text-white text-lg">Does it slow down my computer?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 group-hover:text-indigo-400 transition-transform faq-icon"></i>
+                    </button>
+                    <div class="faq-answer hidden overflow-hidden">
+                        <div class="px-6 pb-6 text-slate-400">
+                            No. Written in Rust for maximum performance. Uses &lt;1% CPU and minimal memory. Designed to run continuously without impacting system performance.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item rounded-xl glass border border-slate-800 overflow-hidden">
+                    <button class="faq-question w-full text-left p-6 flex items-center justify-between hover:bg-slate-800/50 transition-colors group" onclick="toggleFaq(this)">
+                        <span class="font-semibold text-white text-lg">What if I don't install the embedding model?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 group-hover:text-indigo-400 transition-transform faq-icon"></i>
+                    </button>
+                    <div class="faq-answer hidden overflow-hidden">
+                        <div class="px-6 pb-6 text-slate-400">
+                            The app works perfectly fine! You'll have OCR text search (exact text matching). Semantic search (finding by meaning) requires the optional model download.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item rounded-xl glass border border-slate-800 overflow-hidden">
+                    <button class="faq-question w-full text-left p-6 flex items-center justify-between hover:bg-slate-800/50 transition-colors group" onclick="toggleFaq(this)">
+                        <span class="font-semibold text-white text-lg">Is my data encrypted?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 group-hover:text-indigo-400 transition-transform faq-icon"></i>
+                    </button>
+                    <div class="faq-answer hidden overflow-hidden">
+                        <div class="px-6 pb-6 text-slate-400">
+                            No. Screenshots are stored unencrypted on your local disk. Anyone with access to your computer can view them. This is by design for performance, but ensure your device is properly secured.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item rounded-xl glass border border-slate-800 overflow-hidden">
+                    <button class="faq-question w-full text-left p-6 flex items-center justify-between hover:bg-slate-800/50 transition-colors group" onclick="toggleFaq(this)">
+                        <span class="font-semibold text-white text-lg">Why is Privacy Guard disabled?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 group-hover:text-indigo-400 transition-transform faq-icon"></i>
+                    </button>
+                    <div class="faq-answer hidden overflow-hidden">
+                        <div class="px-6 pb-6 text-slate-400">
+                            Privacy Guard functionality is currently commented out but preserved in the codebase. It can be re-enabled in future versions. Currently, all windows are captured regardless of content.
+                        </div>
+                    </div>
+                </div>
+                <div class="faq-item rounded-xl glass border border-slate-800 overflow-hidden">
+                    <button class="faq-question w-full text-left p-6 flex items-center justify-between hover:bg-slate-800/50 transition-colors group" onclick="toggleFaq(this)">
+                        <span class="font-semibold text-white text-lg">Does it work with multiple monitors?</span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 group-hover:text-indigo-400 transition-transform faq-icon"></i>
+                    </button>
+                    <div class="faq-answer hidden overflow-hidden">
+                        <div class="px-6 pb-6 text-slate-400">
+                            Yes! The app automatically detects and captures all connected displays, combining them into a single screenshot.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section id="install" class="py-24">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 class="text-3xl font-bold text-white text-center mb-12">Install Sovereign</h2>
@@ -177,6 +288,7 @@
                         <div>
                             <h3 class="font-bold text-white">Windows</h3>
                             <p class="text-sm text-slate-400">Windows 10/11 (x64)</p>
+                            <p class="text-xs text-amber-400 mt-1">If blocked: Click "More info" → "Run anyway"</p>
                         </div>
                     </div>
                     <a href="https://github.com/lehendo/sovereign/releases/download/v1.1.0/Sovereign_1.1.0_x64_en-US.msi" download class="px-4 py-2 bg-slate-800 hover:bg-indigo-600 text-white rounded-lg text-sm font-medium transition-colors">Download .msi</a>
@@ -187,6 +299,7 @@
                         <div>
                             <h3 class="font-bold text-white">macOS</h3>
                             <p class="text-sm text-slate-400">Intel & Apple Silicon</p>
+                            <p class="text-xs text-amber-400 mt-1">First launch: Right-click → Open (Gatekeeper bypass)</p>
                         </div>
                     </div>
                     <div class="flex gap-2">
@@ -200,6 +313,7 @@
                         <div>
                             <h3 class="font-bold text-white">Linux</h3>
                             <p class="text-sm text-slate-400">Debian/Ubuntu/Fedora/Arch</p>
+                            <p class="text-xs text-slate-500 mt-1">AppImage: Run `chmod +x` first</p>
                         </div>
                     </div>
                     <div class="flex gap-2">
@@ -229,7 +343,40 @@
 
     <script>
         lucide.createIcons();
+        
+        function toggleFaq(button) {
+            const item = button.closest('.faq-item');
+            const answer = item.querySelector('.faq-answer');
+            const icon = button.querySelector('.faq-icon');
+            const isOpen = !answer.classList.contains('hidden');
+            
+            // Close all other FAQs
+            document.querySelectorAll('.faq-item').forEach(otherItem => {
+                if (otherItem !== item) {
+                    otherItem.querySelector('.faq-answer').classList.add('hidden');
+                    const otherIcon = otherItem.querySelector('.faq-icon');
+                    otherIcon.style.transform = 'rotate(0deg)';
+                }
+            });
+            
+            // Toggle current FAQ
+            if (isOpen) {
+                answer.classList.add('hidden');
+                icon.style.transform = 'rotate(0deg)';
+            } else {
+                answer.classList.remove('hidden');
+                icon.style.transform = 'rotate(180deg)';
+            }
+        }
     </script>
+    <style>
+        .faq-icon {
+            transition: transform 0.3s ease;
+        }
+        .faq-answer {
+            transition: all 0.3s ease;
+        }
+    </style>
 </body>
 </html>
 

@@ -16,13 +16,9 @@ pub async fn search_frames(
     query: String,
     state: State<'_, AppState>,
 ) -> Result<Vec<SearchResult>, String> {
+    let query = query.trim();
     println!("Search query: '{}'", query);
 
-    if query.trim().is_empty() {
-        return Ok(vec![]);
-    }
-
-    let query = query.trim();
     if query.is_empty() {
         return Ok(vec![]);
     }
@@ -136,6 +132,23 @@ pub async fn get_recent_frames(
 }
 
 #[tauri::command]
+pub async fn get_frames_from_past_days(
+    days: i64,
+    state: State<'_, AppState>,
+) -> Result<Vec<FrameMetadata>, String> {
+    let db = state.database.lock()
+        .map_err(|_| "Database lock error".to_string())?;
+    
+    let frames = db
+        .get_frames_from_past_days(days)
+        .map_err(|e| format!("Failed to fetch frames from past {} days: {}", days, e))?;
+
+    println!("Retrieved {} frames from past {} days", frames.len(), days);
+
+    Ok(frames)
+}
+
+#[tauri::command]
 pub async fn get_database_stats(
     state: State<'_, AppState>,
 ) -> Result<crate::database::DatabaseStats, String> {
@@ -147,6 +160,29 @@ pub async fn get_database_stats(
         .map_err(|e| format!("Failed to get stats: {}", e))?;
 
     Ok(stats)
+}
+
+#[tauri::command]
+pub async fn read_image_file(path: String) -> Result<String, String> {
+    use std::fs;
+    use base64::engine::general_purpose;
+    use base64::Engine;
+    
+    let file_data = fs::read(&path)
+        .map_err(|e| format!("Failed to read image file: {}", e))?;
+    
+    let base64_data = general_purpose::STANDARD.encode(&file_data);
+    let mime_type = if path.ends_with(".webp") {
+        "image/webp"
+    } else if path.ends_with(".png") {
+        "image/png"
+    } else if path.ends_with(".jpg") || path.ends_with(".jpeg") {
+        "image/jpeg"
+    } else {
+        "image/webp"
+    };
+    
+    Ok(format!("data:{};base64,{}", mime_type, base64_data))
 }
 
 

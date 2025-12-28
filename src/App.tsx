@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider, useQuery, useMutation } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { SearchBar } from "./components/SearchBar";
 import { Timeline } from "./components/Timeline";
 import { Grid } from "./components/Grid";
 import { Modal } from "./components/Modal";
 import { UpdateBanner } from "./components/UpdateBanner";
-import { Database as DatabaseIcon, Shield } from "lucide-react";
+import { Database as DatabaseIcon } from "lucide-react";
+// Privacy Guard temporarily disabled - commented out for future use
+// import { Shield } from "lucide-react";
 import type { FrameMetadata, DatabaseStats } from "./types";
 import LogoMark from "./assets/logo.svg";
 
@@ -25,15 +28,16 @@ function AppContent() {
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [timelineRange, setTimelineRange] = useState<{ start: number; end: number } | null>(null);
 
-  const { data: recentFrames = [], isLoading: isLoadingRecent } = useQuery<FrameMetadata[]>({
+  const { data: recentFrames = [], isLoading: isLoadingRecent, refetch: refetchRecentFrames } = useQuery<FrameMetadata[]>({
     queryKey: ["recentFrames"],
     queryFn: async () => {
-      return await invoke<FrameMetadata[]>("get_recent_frames", { limit: 50 });
+      // Get all frames from the past 14 days (matching retention policy)
+      return await invoke<FrameMetadata[]>("get_frames_from_past_days", { days: 14 });
     },
     refetchInterval: 5000,
   });
 
-  const { data: stats } = useQuery<DatabaseStats>({
+  const { data: stats, refetch: refetchStats } = useQuery<DatabaseStats>({
     queryKey: ["databaseStats"],
     queryFn: async () => {
       return await invoke<DatabaseStats>("get_database_stats");
@@ -41,13 +45,64 @@ function AppContent() {
     refetchInterval: 10000,
   });
 
+  // Listen for frame-captured events and immediately refetch
+  useEffect(() => {
+    const setupEventListener = async () => {
+      try {
+        const unlisten = await listen("frame-captured", async () => {
+          console.log("[App] Received frame-captured event, refetching queries...");
+          // Force immediate refetch using the refetch functions from hooks
+          await Promise.all([
+            refetchRecentFrames(),
+            refetchStats()
+          ]);
+          console.log("[App] Queries refetched successfully");
+        });
+        console.log("[App] Frame-captured event listener set up successfully");
+        return unlisten;
+      } catch (error) {
+        console.error("[App] Failed to set up frame-captured event listener:", error);
+        throw error;
+      }
+    };
+
+    let unlistenFn: (() => void) | undefined;
+
+    setupEventListener()
+      .then((unlisten) => {
+        unlistenFn = unlisten;
+      })
+      .catch((error) => {
+        console.error("[App] Failed to set up frame-captured event listener:", error);
+      });
+
+    return () => {
+      if (unlistenFn) {
+        console.log("[App] Cleaning up frame-captured event listener");
+        unlistenFn();
+      }
+    };
+  }, [refetchRecentFrames, refetchStats]);
+
   const searchMutation = useMutation({
     mutationFn: async (query: string) => {
-      return await invoke<FrameMetadata[]>("search_frames", { query });
+      try {
+        return await invoke<FrameMetadata[]>("search_frames", { query });
+      } catch (error) {
+        console.error("Search error:", error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
-      setSearchResults(data);
-      setIsSearchMode(true);
+      try {
+        setSearchResults(data || []);
+        setIsSearchMode(true);
+      } catch (error) {
+        console.error("Error setting search results:", error);
+      }
+    },
+    onError: (error) => {
+      console.error("Search mutation failed:", error);
     },
   });
 
@@ -63,12 +118,27 @@ function AppContent() {
 
     if (oldest !== null && newest !== null) {
       setTimelineRange((prev) => {
-        const prevStart = prev?.start ?? oldest;
-        const prevEnd = prev?.end ?? newest;
+        if (prev === null) {
+          return { start: oldest, end: newest };
+        }
+        
+        const prevStart = prev.start;
+        const prevEnd = prev.end;
+
+        const newStart = Math.max(oldest, Math.min(prevStart, newest));
+        const newEnd = Math.min(newest, Math.max(prevEnd, oldest));
+        
+        if (newStart >= newEnd) {
+          return { start: oldest, end: newest };
+        }
+        
+        if (prevStart === newStart && prevEnd === newEnd) {
+          return prev;
+        }
 
         return {
-          start: Math.max(oldest, Math.min(prevStart, newest)),
-          end: Math.min(newest, Math.max(prevEnd, oldest)),
+          start: newStart,
+          end: newEnd,
         };
       });
     } else {
@@ -77,6 +147,14 @@ function AppContent() {
   }, [stats?.oldest_timestamp, stats?.newest_timestamp]);
 
   const handleTimelineChange = (start: number, end: number) => {
+    if (isNaN(start) || isNaN(end) || !isFinite(start) || !isFinite(end)) {
+      console.error("Invalid timeline values:", { start, end });
+      return;
+    }
+    if (start >= end) {
+      console.error("Start must be less than end:", { start, end });
+      return;
+    }
     setTimelineRange({ start, end });
   };
 
@@ -90,7 +168,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      <header className="border-b border-gray-800 bg-gray-900/60 backdrop-blur sticky top-0 z-40">
+      <header className="border-b border-gray-800 bg-gray-900 sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -103,10 +181,11 @@ function AppContent() {
 
             {stats && (
               <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/30 rounded-lg">
+                {/* Privacy Guard temporarily disabled - commented out for future use */}
+                {/* <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/30 rounded-lg">
                   <Shield className="w-4 h-4 text-green-500" />
                   <span className="text-green-400">Privacy Guard Active</span>
-                </div>
+                </div> */}
                 <div className="flex items-center gap-2 px-3 py-1 bg-gray-800 rounded-lg">
                   <DatabaseIcon className="w-4 h-4 text-gray-400" />
                   <span className="text-gray-400">{stats.total_frames} frames</span>
@@ -155,7 +234,8 @@ function AppContent() {
               onRangeChange={handleTimelineChange}
             />
 
-            <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+            {/* Privacy Guard temporarily disabled - commented out for future use */}
+            {/* <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Shield className="w-4 h-4 text-green-500" />
                 <h3 className="text-sm font-semibold text-gray-300">Privacy Guard</h3>
@@ -166,7 +246,7 @@ function AppContent() {
               <div className="mt-3 px-2 py-1 bg-green-500/10 border border-green-500/30 rounded text-xs text-green-400 text-center">
                 Active
               </div>
-            </div>
+            </div> */}
 
             {stats && (
               <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">

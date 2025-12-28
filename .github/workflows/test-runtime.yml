@@ -1,0 +1,201 @@
+name: Runtime Tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - 'src-tauri/**'
+      - 'src/**'
+
+jobs:
+  test-runtime:
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "macos-latest"
+            args: "--target x86_64-apple-darwin"
+            target: "x86_64-apple-darwin"
+            os: "macos"
+          - platform: "macos-latest"
+            args: "--target aarch64-apple-darwin"
+            target: "aarch64-apple-darwin"
+            os: "macos"
+          - platform: "windows-latest"
+            args: ""
+            target: "x86_64-pc-windows-msvc"
+            os: "windows"
+          - platform: "ubuntu-latest"
+            args: ""
+            target: "x86_64-unknown-linux-gnu"
+            os: "linux"
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install dependencies (Ubuntu only)
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev dpkg fakeroot
+
+      - name: Install Tesseract
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt-get install -y tesseract-ocr
+
+      - name: Install Tesseract (macOS)
+        if: matrix.os == 'macos'
+        timeout-minutes: 5
+        run: |
+          brew install tesseract || echo "Tesseract installation failed or already installed"
+
+      - name: Verify winget availability (Windows)
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          Write-Host "Checking winget availability..."
+          winget --version
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "winget is not available. This is required for Tesseract installation."
+            exit 1
+          }
+          Write-Host "✓ winget is available"
+
+      - name: Bundle Tesseract for Windows
+        if: matrix.os == 'windows'
+        shell: pwsh
+        timeout-minutes: 10
+        run: |
+          .\scripts\setup-tesseract-win.ps1
+
+      - name: Create placeholder tesseract-win directory (non-Windows)
+        if: matrix.os != 'windows'
+        run: |
+          mkdir -p src-tauri/resources/tesseract-win
+          # Create a placeholder file so the directory isn't empty
+          touch src-tauri/resources/tesseract-win/.gitkeep
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build Tauri app
+        timeout-minutes: 15
+        run: |
+          npm run tauri build -- ${{ matrix.args }}
+
+      - name: Verify macOS artifacts
+        if: matrix.os == 'macos'
+        run: |
+          ls "src-tauri/target/${{ matrix.target }}/release/bundle/dmg/"*.dmg >/dev/null 2>&1 || exit 1
+          ls "src-tauri/target/${{ matrix.target }}/release/bundle/macos/"*.app >/dev/null 2>&1 || exit 1
+
+      - name: Verify Windows artifacts
+        if: matrix.os == 'windows'
+        shell: bash
+        run: |
+          # Look for any .msi under src-tauri/target (handles both target/release and target/<triple>/release)
+          MSI_PATH=$(find src-tauri/target -type f -path '*/release/bundle/msi/*.msi' -print -quit || true)
+          if [ -z "$MSI_PATH" ]; then
+            echo "No MSI installer found under src-tauri/target"
+            # Print tree for debugging
+            echo "Contents of src-tauri/target (for debugging):"
+            find src-tauri/target -maxdepth 4 -print || true
+            exit 1
+          fi
+          echo "MSI installer created: $MSI_PATH"
+          test -f "$MSI_PATH" || (echo "MSI path exists but is not a file: $MSI_PATH" && exit 1)
+
+      - name: Verify Linux artifacts
+        if: matrix.os == 'linux'
+        run: |
+          # Prefer cross-target directory, fall back to native release directory
+          if ls "src-tauri/target/${{ matrix.target }}/release/bundle/deb/"*.deb >/dev/null 2>&1; then
+            echo "Found .deb in src-tauri/target/${{ matrix.target }}/release/bundle/deb/"
+          elif ls "src-tauri/target/release/bundle/deb/"*.deb >/dev/null 2>&1; then
+            echo "Found .deb in src-tauri/target/release/bundle/deb/"
+          else
+            echo "No .deb artifacts found" >&2
+            exit 1
+          fi
+
+          if ls "src-tauri/target/${{ matrix.target }}/release/bundle/appimage/"*.AppImage >/dev/null 2>&1; then
+            echo "Found AppImage in src-tauri/target/${{ matrix.target }}/release/bundle/appimage/"
+          elif ls "src-tauri/target/release/bundle/appimage/"*.AppImage >/dev/null 2>&1; then
+            echo "Found AppImage in src-tauri/target/release/bundle/appimage/"
+          else
+            echo "No AppImage artifacts found" >&2
+            exit 1
+          fi
+
+      - name: Test app launch (macOS)
+        if: matrix.os == 'macos'
+        timeout-minutes: 2
+        run: |
+          APP_PATH=$(find "src-tauri/target/${{ matrix.target }}/release/bundle/macos" -name "*.app" | head -1)
+          echo "Testing app: $APP_PATH"
+          # Just verify binary exists and is executable (don't actually run it to avoid capture loop)
+          test -f "$APP_PATH/Contents/MacOS/sovereign" || exit 1
+          test -x "$APP_PATH/Contents/MacOS/sovereign" || exit 1
+          echo "App binary exists and is executable"
+
+      - name: Test app launch (Windows)
+        if: matrix.os == 'windows'
+        shell: bash
+        run: |
+          MSI_PATH=$(find src-tauri/target -type f -path '*/release/bundle/msi/*.msi' -print -quit || true)
+          if [ -z "$MSI_PATH" ]; then
+            echo "No MSI installer found" >&2
+            exit 1
+          fi
+          echo "MSI installer created: $MSI_PATH"
+          test -f "$MSI_PATH" || exit 1
+
+      - name: Test app launch (Linux)
+        if: matrix.os == 'linux'
+        timeout-minutes: 2
+        run: |
+          APPIMAGE_PATH=$(find src-tauri/target -type f -name "*.AppImage" | head -n 1)
+          echo "Testing AppImage: $APPIMAGE_PATH"
+          test -f "$APPIMAGE_PATH" || (echo "AppImage not found" >&2; exit 1)
+          chmod +x "$APPIMAGE_PATH"
+          test -x "$APPIMAGE_PATH" || (echo "AppImage not executable" >&2; exit 1)
+          echo "AppImage exists and is executable"
+
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-${{ matrix.os }}-${{ matrix.target }}
+          path: |
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.dmg
+            src-tauri/target/release/bundle/**/*.dmg
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.app
+            src-tauri/target/release/bundle/**/*.app
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.msi
+            src-tauri/target/release/bundle/**/*.msi
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.deb
+            src-tauri/target/release/bundle/**/*.deb
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.AppImage
+            src-tauri/target/release/bundle/**/*.AppImage
+          retention-days: 7
+
