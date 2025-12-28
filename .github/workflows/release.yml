@@ -155,47 +155,79 @@ jobs:
           # Create output directory
           mkdir -p /tmp/updater-manifests
           
-          # Write private key to a temporary file to avoid base64 decoding issues
+          # Sign the artifact
+          ARTIFACT_DIR=$(dirname "$ARTIFACT")
+          ARTIFACT_NAME=$(basename "$ARTIFACT")
+          
+          # Write private key to a temporary file
           PRIVATE_KEY_FILE=$(mktemp)
           echo "$TAURI_PRIVATE_KEY" > "$PRIVATE_KEY_FILE"
           
-          # Generate latest.json using tauri signer with file path
-          ARTIFACT_DIR=$(dirname "$ARTIFACT")
+          # Sign the artifact
           npx @tauri-apps/cli signer sign "$ARTIFACT" \
             --private-key-path "$PRIVATE_KEY_FILE" \
             --password "$TAURI_KEY_PASSWORD" 2>&1 || {
-            echo "Warning: tauri signer failed with file path, trying direct key..."
-            # Try with direct key as fallback
-            npx @tauri-apps/cli signer sign "$ARTIFACT" \
-              --private-key "$TAURI_PRIVATE_KEY" \
-              --password "$TAURI_KEY_PASSWORD" 2>&1 || {
-              echo "Warning: tauri signer failed completely"
-              rm -f "$PRIVATE_KEY_FILE"
-              exit 0
-            }
+            echo "Warning: tauri signer failed"
+            rm -f "$PRIVATE_KEY_FILE"
+            exit 0
           }
           
           # Clean up temp file
           rm -f "$PRIVATE_KEY_FILE"
           
-          # Find the generated latest.json (it should be next to the artifact)
-          LATEST_JSON=$(find "$ARTIFACT_DIR" -name "latest.json" 2>/dev/null | head -1)
-          
-          if [ -n "$LATEST_JSON" ]; then
-            echo "Generated latest.json: $LATEST_JSON"
-            cat "$LATEST_JSON"
-            # Upload to release using GitHub CLI
-            gh release upload "${{ github.ref_name }}" "$LATEST_JSON" --clobber || echo "Failed to upload latest.json (this is OK if file already exists)"
-          else
-            echo "Warning: latest.json not found after signing. Checking if tauri-action already generated it..."
-            # Sometimes tauri-action generates it, check the bundle directory
-            BUNDLE_LATEST=$(find "$ARTIFACT_DIR" -name "*.json" 2>/dev/null | grep -i latest | head -1)
-            if [ -n "$BUNDLE_LATEST" ]; then
-              echo "Found existing latest.json: $BUNDLE_LATEST"
-              gh release upload "${{ github.ref_name }}" "$BUNDLE_LATEST" --clobber || echo "Failed to upload"
-            else
-              echo "No latest.json found. The tauri-action may not generate it automatically."
-              echo "Note: Check that TAURI_PRIVATE_KEY secret is properly base64 encoded without newlines or special characters."
-            fi
+          # Read the signature file
+          SIG_FILE="${ARTIFACT}.sig"
+          if [ ! -f "$SIG_FILE" ]; then
+            echo "Error: Signature file not found: $SIG_FILE"
+            exit 0
           fi
+          
+          SIGNATURE=$(cat "$SIG_FILE" | tr -d '\n')
+          
+          # Get version from tauri.conf.json
+          VERSION=$(node -p "require('../tauri.conf.json').version")
+          
+          # Determine platform and architecture
+          if [ "${{ matrix.os }}" = "macos" ]; then
+            PLATFORM="darwin"
+            if [ "${{ matrix.arch }}" = "arm64" ]; then
+              ARCH="aarch64"
+            else
+              ARCH="x86_64"
+            fi
+            EXT="dmg"
+          elif [ "${{ matrix.os }}" = "windows" ]; then
+            PLATFORM="windows"
+            ARCH="x86_64"
+            EXT="msi"
+          else
+            PLATFORM="linux"
+            ARCH="x86_64"
+            EXT="deb"
+          fi
+          
+          # Get the release URL
+          RELEASE_URL="https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/$ARTIFACT_NAME"
+          
+          # Create latest.json
+          LATEST_JSON="${ARTIFACT_DIR}/latest.json"
+          cat > "$LATEST_JSON" <<EOF
+{
+  "version": "$VERSION",
+  "notes": "See the assets to download this version and install.",
+  "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "platforms": {
+    "${PLATFORM}-${ARCH}": {
+      "signature": "$SIGNATURE",
+      "url": "$RELEASE_URL"
+    }
+  }
+}
+EOF
+          
+          echo "Generated latest.json:"
+          cat "$LATEST_JSON"
+          
+          # Upload latest.json to release
+          gh release upload "${{ github.ref_name }}" "$LATEST_JSON" --clobber || echo "Failed to upload latest.json"
 
