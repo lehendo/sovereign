@@ -213,7 +213,8 @@ jobs:
           fi
           
           # Get the release URL
-          RELEASE_URL="https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/$ARTIFACT_NAME"
+          RELEASE_TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          RELEASE_URL="https://github.com/${{ github.repository }}/releases/download/${RELEASE_TAG}/$ARTIFACT_NAME"
           
           # Create latest.json
           LATEST_JSON="${ARTIFACT_DIR}/latest.json"
