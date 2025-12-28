@@ -191,7 +191,7 @@ jobs:
           SIGNATURE=$(cat "$SIG_FILE" | tr -d '\n')
           
           # Get version from tauri.conf.json
-          VERSION=$(node -p "require('../tauri.conf.json').version")
+          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
           
           # Determine platform and architecture
           if [ "${{ matrix.os }}" = "macos" ]; then
