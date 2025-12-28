@@ -155,17 +155,30 @@ jobs:
           # Create output directory
           mkdir -p /tmp/updater-manifests
           
-          # Generate latest.json using tauri signer
-          # The signer generates the file next to the artifact, so we'll copy it
+          # Write private key to a temporary file to avoid base64 decoding issues
+          PRIVATE_KEY_FILE=$(mktemp)
+          echo "$TAURI_PRIVATE_KEY" > "$PRIVATE_KEY_FILE"
+          
+          # Generate latest.json using tauri signer with file path
+          ARTIFACT_DIR=$(dirname "$ARTIFACT")
           npx @tauri-apps/cli signer sign "$ARTIFACT" \
-            --private-key "$TAURI_PRIVATE_KEY" \
+            --private-key-path "$PRIVATE_KEY_FILE" \
             --password "$TAURI_KEY_PASSWORD" 2>&1 || {
-            echo "Warning: tauri signer failed"
-            exit 0
+            echo "Warning: tauri signer failed with file path, trying direct key..."
+            # Try with direct key as fallback
+            npx @tauri-apps/cli signer sign "$ARTIFACT" \
+              --private-key "$TAURI_PRIVATE_KEY" \
+              --password "$TAURI_KEY_PASSWORD" 2>&1 || {
+              echo "Warning: tauri signer failed completely"
+              rm -f "$PRIVATE_KEY_FILE"
+              exit 0
+            }
           }
           
+          # Clean up temp file
+          rm -f "$PRIVATE_KEY_FILE"
+          
           # Find the generated latest.json (it should be next to the artifact)
-          ARTIFACT_DIR=$(dirname "$ARTIFACT")
           LATEST_JSON=$(find "$ARTIFACT_DIR" -name "latest.json" 2>/dev/null | head -1)
           
           if [ -n "$LATEST_JSON" ]; then
@@ -182,6 +195,7 @@ jobs:
               gh release upload "${{ github.ref_name }}" "$BUNDLE_LATEST" --clobber || echo "Failed to upload"
             else
               echo "No latest.json found. The tauri-action may not generate it automatically."
+              echo "Note: Check that TAURI_PRIVATE_KEY secret is properly base64 encoded without newlines or special characters."
             fi
           fi
 
