@@ -106,7 +106,7 @@ jobs:
         with:
           projectPath: .
           args: ${{ matrix.args }}
-          tagName: ${{ github.ref_name }}
+          tagName: ${{ github.event.inputs.tag || github.ref_name }}
           releaseName: "Sovereign ${{ github.event.inputs.tag || github.ref_name }}"
           releaseBody: "See the assets to download this version and install."
           releaseDraft: false
