@@ -167,15 +167,18 @@ jobs:
             echo "Artifact already signed by tauri-action, using existing signature"
           else
             # Sign the artifact ourselves
-            # Write private key to a temporary file
+            # Write private key to a temporary file (preserve newlines)
             PRIVATE_KEY_FILE=$(mktemp)
-            echo "${{ secrets.TAURI_PRIVATE_KEY }}" > "$PRIVATE_KEY_FILE"
+            # Use printf to preserve newlines and special characters
+            printf '%s\n' "${{ secrets.TAURI_PRIVATE_KEY }}" > "$PRIVATE_KEY_FILE"
             
             # Sign the artifact (don't set TAURI_PRIVATE_KEY env var to avoid conflicts)
             npx @tauri-apps/cli signer sign "$ARTIFACT" \
               --private-key-path "$PRIVATE_KEY_FILE" \
               --password "$TAURI_KEY_PASSWORD" 2>&1 || {
               echo "Error: tauri signer failed"
+              echo "Debug: Checking if key file exists and size..."
+              ls -lh "$PRIVATE_KEY_FILE" || echo "Key file not found"
               rm -f "$PRIVATE_KEY_FILE"
               exit 1
             }
