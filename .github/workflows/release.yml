@@ -295,7 +295,8 @@ jobs:
           echo "  URL: $RELEASE_URL"
           
           # Download existing latest.json if it exists, or create new one
-          LATEST_JSON_TEMP=$(mktemp)
+          # Use artifact directory for temp file to avoid Windows path issues
+          LATEST_JSON_TEMP="${ARTIFACT_DIR}/.latest_json_temp_$$"
           RELEASE_TAG="${{ github.event.inputs.tag || github.ref_name }}"
           
           # Write signature to temp file to safely pass it to Node.js (signature is already base64)
@@ -352,7 +353,7 @@ jobs:
               else
                 echo "Downloaded latest.json is invalid JSON, creating new one..."
                 rm -f "$LATEST_JSON_TEMP"
-                LATEST_JSON_TEMP=$(mktemp)
+                LATEST_JSON_TEMP="${ARTIFACT_DIR}/.latest_json_temp_$$"
                 # Create new latest.json with this platform
                 node -e "
                   const fs = require('fs');
@@ -385,7 +386,7 @@ jobs:
             else
               echo "Failed to download existing latest.json, creating new one..."
               rm -f "$LATEST_JSON_TEMP"
-              LATEST_JSON_TEMP=$(mktemp)
+              LATEST_JSON_TEMP="${ARTIFACT_DIR}/.latest_json_temp_$$"
               # Create new latest.json with this platform
               node -e "
                 const fs = require('fs');
