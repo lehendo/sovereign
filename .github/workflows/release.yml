@@ -116,7 +116,6 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         run: |
           # Find the built artifact (check both possible paths)
@@ -158,36 +157,40 @@ jobs:
           
           echo "Found artifact: $ARTIFACT"
           
-          # Create output directory
-          mkdir -p /tmp/updater-manifests
-          
-          # Sign the artifact
+          # Set up variables
           ARTIFACT_DIR=$(dirname "$ARTIFACT")
           ARTIFACT_NAME=$(basename "$ARTIFACT")
-          
-          # Write private key to a temporary file
-          PRIVATE_KEY_FILE=$(mktemp)
-          echo "$TAURI_PRIVATE_KEY" > "$PRIVATE_KEY_FILE"
-          
-          # Sign the artifact
-          npx @tauri-apps/cli signer sign "$ARTIFACT" \
-            --private-key-path "$PRIVATE_KEY_FILE" \
-            --password "$TAURI_KEY_PASSWORD" 2>&1 || {
-            echo "Warning: tauri signer failed"
-            rm -f "$PRIVATE_KEY_FILE"
-            exit 0
-          }
-          
-          # Clean up temp file
-          rm -f "$PRIVATE_KEY_FILE"
-          
-          # Read the signature file
           SIG_FILE="${ARTIFACT}.sig"
-          if [ ! -f "$SIG_FILE" ]; then
-            echo "Error: Signature file not found: $SIG_FILE"
-            exit 0
+          
+          # Check if artifact is already signed by tauri-action
+          if [ -f "$SIG_FILE" ]; then
+            echo "Artifact already signed by tauri-action, using existing signature"
+          else
+            # Sign the artifact ourselves
+            # Write private key to a temporary file
+            PRIVATE_KEY_FILE=$(mktemp)
+            echo "${{ secrets.TAURI_PRIVATE_KEY }}" > "$PRIVATE_KEY_FILE"
+            
+            # Sign the artifact (don't set TAURI_PRIVATE_KEY env var to avoid conflicts)
+            npx @tauri-apps/cli signer sign "$ARTIFACT" \
+              --private-key-path "$PRIVATE_KEY_FILE" \
+              --password "$TAURI_KEY_PASSWORD" 2>&1 || {
+              echo "Error: tauri signer failed"
+              rm -f "$PRIVATE_KEY_FILE"
+              exit 1
+            }
+            
+            # Clean up temp file
+            rm -f "$PRIVATE_KEY_FILE"
+            
+            # Verify signature was created
+            if [ ! -f "$SIG_FILE" ]; then
+              echo "Error: Signature file not found after signing: $SIG_FILE"
+              exit 1
+            fi
           fi
           
+          # Read the signature file
           SIGNATURE=$(cat "$SIG_FILE" | tr -d '\n')
           
           # Get version from tauri.conf.json

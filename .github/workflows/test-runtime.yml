@@ -63,9 +63,16 @@ jobs:
 
       - name: Install Tesseract (macOS)
         if: matrix.os == 'macos'
-        timeout-minutes: 5
+        timeout-minutes: 10
         run: |
-          brew install tesseract || echo "Tesseract installation failed or already installed"
+          # Check if tesseract is already installed
+          if command -v tesseract &> /dev/null; then
+            echo "Tesseract is already installed"
+            tesseract --version
+          else
+            echo "Installing Tesseract via Homebrew..."
+            brew install tesseract
+          fi
 
       - name: Verify winget availability (Windows)
         if: matrix.os == 'windows'
