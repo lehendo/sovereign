@@ -54,7 +54,30 @@ fn setup_tesseract_windows(app_handle: &tauri::AppHandle) -> Result<(), Box<dyn 
 
 #[cfg(not(target_os = "windows"))]
 fn check_tesseract_installed() -> Result<(), String> {
-    // Check if tesseract command is available
+    // On macOS, check common Homebrew installation paths first
+    #[cfg(target_os = "macos")]
+    {
+        let homebrew_paths = vec![
+            "/opt/homebrew/bin/tesseract",  // Apple Silicon Homebrew
+            "/usr/local/bin/tesseract",      // Intel Homebrew
+            "/opt/homebrew/opt/tesseract/bin/tesseract",  // Alternative Homebrew location
+        ];
+        
+        for path in homebrew_paths {
+            if std::path::Path::new(path).exists() {
+                match Command::new(path).arg("--version").output() {
+                    Ok(result) if result.status.success() => {
+                        let version = String::from_utf8_lossy(&result.stdout);
+                        println!("Tesseract found at {}: {}", path, version.lines().next().unwrap_or("unknown"));
+                        return Ok(());
+                    }
+                    _ => continue,
+                }
+            }
+        }
+    }
+    
+    // Fallback: Check if tesseract command is available in PATH
     let output = Command::new("tesseract")
         .arg("--version")
         .output();
@@ -62,11 +85,11 @@ fn check_tesseract_installed() -> Result<(), String> {
     match output {
         Ok(result) if result.status.success() => {
             let version = String::from_utf8_lossy(&result.stdout);
-            println!("Tesseract found: {}", version.lines().next().unwrap_or("unknown"));
+            println!("Tesseract found in PATH: {}", version.lines().next().unwrap_or("unknown"));
             Ok(())
         }
         Ok(_) => Err("Tesseract command failed".to_string()),
-        Err(_) => Err("Tesseract not found in PATH".to_string()),
+        Err(_) => Err("Tesseract not found. Please install it using: brew install tesseract".to_string()),
     }
 }
 
@@ -85,6 +108,15 @@ fn show_tesseract_error_dialog() {
     } else {
         "sudo apt install tesseract-ocr"
     };
+    
+    // Try to show a macOS dialog if available
+    #[cfg(target_os = "macos")]
+    {
+        let script = format!(
+            r#"osascript -e 'display dialog "Sovereign requires Tesseract OCR to be installed.\n\nPlease install it by running:\n\n  brew install tesseract\n\nAfter installation, restart the application." buttons {{"OK"}} default button "OK" with icon stop with title "Tesseract OCR Required"'"#
+        );
+        let _ = Command::new("sh").arg("-c").arg(&script).output();
+    }
     
     eprintln!("═══════════════════════════════════════════════════════════");
     eprintln!("  DEPENDENCY MISSING: Tesseract OCR");
