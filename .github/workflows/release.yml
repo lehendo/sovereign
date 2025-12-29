@@ -160,67 +160,101 @@ jobs:
           # Set up variables
           ARTIFACT_DIR=$(dirname "$ARTIFACT")
           ARTIFACT_NAME=$(basename "$ARTIFACT")
-          
-          # Check for signature file in multiple possible locations
           SIG_FILE="${ARTIFACT}.sig"
-          if [ ! -f "$SIG_FILE" ]; then
-            # Try alternative locations
-            SIG_FILE=$(find "$ARTIFACT_DIR" -name "${ARTIFACT_NAME}.sig" 2>/dev/null | head -1)
-          fi
           
-          # If still not found, check if tauri-action created it elsewhere
-          if [ -z "$SIG_FILE" ] || [ ! -f "$SIG_FILE" ]; then
-            echo "Signature file not found, checking if artifact was signed by tauri-action..."
-            # Search more broadly
-            SIG_FILE=$(find src-tauri/target -name "*.sig" -path "*/bundle/*" 2>/dev/null | grep -i "$(basename "$ARTIFACT")" | head -1)
-          fi
-          
-          # If still not found, we need to sign it ourselves
-          if [ -z "$SIG_FILE" ] || [ ! -f "$SIG_FILE" ]; then
-            echo "Artifact not signed by tauri-action, signing it now..."
-            SIG_FILE="${ARTIFACT}.sig"
-            
-            # Write private key to a temporary file
-            # The key should be base64-encoded without newlines
-            PRIVATE_KEY_FILE=$(mktemp)
-            # Remove any newlines from the key (it should be a single base64 string)
-            PRIVATE_KEY_CONTENT="${{ secrets.TAURI_PRIVATE_KEY }}"
-            # Remove all newlines and whitespace, keep only the base64 content
-            echo "$PRIVATE_KEY_CONTENT" | tr -d '\n\r ' > "$PRIVATE_KEY_FILE"
-            
-            # Verify the key file was written correctly
-            if [ ! -s "$PRIVATE_KEY_FILE" ]; then
-              echo "Error: Private key file is empty"
-              rm -f "$PRIVATE_KEY_FILE"
-              exit 1
-            fi
-            
-            # Sign the artifact
-            npx @tauri-apps/cli signer sign "$ARTIFACT" \
-              --private-key-path "$PRIVATE_KEY_FILE" \
-              --password "$TAURI_KEY_PASSWORD" 2>&1 || {
-              echo "Error: tauri signer failed"
-              rm -f "$PRIVATE_KEY_FILE"
-              exit 1
-            }
-            
-            # Clean up temp file
-            rm -f "$PRIVATE_KEY_FILE"
-            
-            # Verify signature was created
-            if [ ! -f "$SIG_FILE" ]; then
-              echo "Error: Signature file not found after signing: $SIG_FILE"
-              exit 1
-            fi
+          # Check if signature file already exists
+          if [ -f "$SIG_FILE" ]; then
+            echo "Found signature file: $SIG_FILE"
           else
-            echo "Using existing signature file: $SIG_FILE"
+            # Search for signature file in alternative locations
+            echo "Signature file not found at $SIG_FILE, searching alternative locations..."
+            FOUND_SIG=$(find "$ARTIFACT_DIR" -name "${ARTIFACT_NAME}.sig" 2>/dev/null | head -1)
+            if [ -n "$FOUND_SIG" ] && [ -f "$FOUND_SIG" ]; then
+              SIG_FILE="$FOUND_SIG"
+              echo "Found signature file at: $SIG_FILE"
+            else
+              # Search more broadly for any .sig files
+              FOUND_SIG=$(find src-tauri/target -name "*.sig" -path "*/bundle/*" 2>/dev/null | head -1)
+              if [ -n "$FOUND_SIG" ] && [ -f "$FOUND_SIG" ]; then
+                SIG_FILE="$FOUND_SIG"
+                echo "Found signature file at: $SIG_FILE"
+              else
+                # No signature found, need to create one
+                echo "No signature file found. Signing artifact now..."
+                SIG_FILE="${ARTIFACT}.sig"
+                
+                # Write private key to a temporary file
+                # Handle both PEM format (with newlines) and base64 format (single line)
+                PRIVATE_KEY_FILE=$(mktemp)
+                PRIVATE_KEY_CONTENT="${{ secrets.TAURI_PRIVATE_KEY }}"
+                
+                # Write the key preserving its original format
+                # If it starts with "-----BEGIN", it's PEM format and needs newlines
+                # Otherwise, it's likely base64 and should be a single line
+                if echo "$PRIVATE_KEY_CONTENT" | grep -q "^-----BEGIN"; then
+                  # PEM format - preserve as-is
+                  echo "$PRIVATE_KEY_CONTENT" > "$PRIVATE_KEY_FILE"
+                else
+                  # Base64 format - ensure it's a single line (remove newlines but keep content)
+                  echo "$PRIVATE_KEY_CONTENT" | tr -d '\n\r' > "$PRIVATE_KEY_FILE"
+                fi
+                
+                # Verify the key file was written correctly
+                if [ ! -s "$PRIVATE_KEY_FILE" ]; then
+                  echo "Error: Private key file is empty"
+                  rm -f "$PRIVATE_KEY_FILE"
+                  exit 1
+                fi
+                
+                echo "Signing artifact: $ARTIFACT"
+                echo "Key file size: $(wc -c < "$PRIVATE_KEY_FILE") bytes"
+                
+                # Sign the artifact - try with file path first
+                SIGN_OUTPUT=$(npx @tauri-apps/cli signer sign "$ARTIFACT" \
+                  --private-key-path "$PRIVATE_KEY_FILE" \
+                  --password "$TAURI_KEY_PASSWORD" 2>&1)
+                SIGN_EXIT_CODE=$?
+                
+                if [ $SIGN_EXIT_CODE -ne 0 ]; then
+                  echo "Error: tauri signer failed with exit code $SIGN_EXIT_CODE"
+                  echo "Signer output:"
+                  echo "$SIGN_OUTPUT"
+                  rm -f "$PRIVATE_KEY_FILE"
+                  exit 1
+                fi
+                
+                # Clean up temp file
+                rm -f "$PRIVATE_KEY_FILE"
+                
+                # Verify signature was created
+                if [ ! -f "$SIG_FILE" ]; then
+                  echo "Error: Signature file not found after signing: $SIG_FILE"
+                  echo "Listing files in artifact directory:"
+                  ls -la "$ARTIFACT_DIR" || true
+                  echo "Searching for any .sig files:"
+                  find "$ARTIFACT_DIR" -name "*.sig" 2>/dev/null || true
+                  exit 1
+                fi
+                echo "Successfully created signature file: $SIG_FILE"
+              fi
+            fi
           fi
           
-          # Read the signature file
-          SIGNATURE=$(cat "$SIG_FILE" | tr -d '\n')
+          # Read the signature file (remove newlines - signatures are base64 single-line)
+          SIGNATURE=$(cat "$SIG_FILE" | tr -d '\n\r')
+          
+          if [ -z "$SIGNATURE" ]; then
+            echo "Error: Signature is empty"
+            exit 1
+          fi
           
           # Get version from tauri.conf.json
           VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          
+          if [ -z "$VERSION" ]; then
+            echo "Error: Version is empty"
+            exit 1
+          fi
           
           # Determine platform and architecture
           if [ "${{ matrix.os }}" = "macos" ]; then
@@ -245,15 +279,43 @@ jobs:
           RELEASE_TAG="${{ github.event.inputs.tag || github.ref_name }}"
           RELEASE_URL="https://github.com/${{ github.repository }}/releases/download/${RELEASE_TAG}/$ARTIFACT_NAME"
           
+          echo "Creating latest.json with:"
+          echo "  Version: $VERSION"
+          echo "  Platform: $PLATFORM"
+          echo "  Arch: $ARCH"
+          echo "  Release URL: $RELEASE_URL"
+          echo "  Signature length: ${#SIGNATURE} characters"
+          
           # Create latest.json
           LATEST_JSON="${ARTIFACT_DIR}/latest.json"
           PUB_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          
           # Use printf to avoid YAML heredoc issues
+          # Format matches Tauri updater spec exactly
           printf '{\n  "version": "%s",\n  "notes": "See the assets to download this version and install.",\n  "pub_date": "%s",\n  "platforms": {\n    "%s-%s": {\n      "signature": "%s",\n      "url": "%s"\n    }\n  }\n}' "$VERSION" "$PUB_DATE" "$PLATFORM" "$ARCH" "$SIGNATURE" "$RELEASE_URL" > "$LATEST_JSON"
+          
+          # Verify latest.json was created and is valid JSON
+          if [ ! -f "$LATEST_JSON" ]; then
+            echo "Error: latest.json was not created"
+            exit 1
+          fi
+          
+          # Validate JSON syntax
+          if ! node -e "JSON.parse(require('fs').readFileSync('$LATEST_JSON', 'utf8'))" 2>/dev/null; then
+            echo "Error: latest.json is not valid JSON"
+            cat "$LATEST_JSON"
+            exit 1
+          fi
           
           echo "Generated latest.json:"
           cat "$LATEST_JSON"
           
           # Upload latest.json to release
-          gh release upload "${{ github.event.inputs.tag || github.ref_name }}" "$LATEST_JSON" --clobber || echo "Failed to upload latest.json"
+          echo "Uploading latest.json to release..."
+          if ! gh release upload "${{ github.event.inputs.tag || github.ref_name }}" "$LATEST_JSON" --clobber; then
+            echo "Error: Failed to upload latest.json"
+            exit 1
+          fi
+          
+          echo "Successfully uploaded latest.json to release"
 
