@@ -860,7 +860,9 @@ impl ScreenRecorder {
     }
 
     pub async fn start_capture_loop(mut self) {
-        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(2));
+        // Capture every 30 seconds - balances responsiveness with performance
+        // Note: Only saves when screen actually changes (deduplication)
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(30));
 
         if let Ok(stats) = self.database.get_stats() {
             println!("=== Database Statistics ===");
