@@ -66,7 +66,7 @@ A privacy-first, local-only alternative to Microsoft Recall. Search everything y
 
 **[Local Development Guide →](LOCALDEV.md)**
 
-## ⚠️ Important Security Notice
+## Important Security Notice
 
 **This software captures ALL visible content on your screen, including sensitive information.**
 
