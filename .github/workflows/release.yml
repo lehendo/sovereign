@@ -464,14 +464,18 @@ jobs:
           echo "Merged latest.json:"
           cat "$LATEST_JSON_TEMP"
           
+          # Copy temp file to latest.json for upload (gh release upload uses the filename)
+          LATEST_JSON_FILE="${ARTIFACT_DIR}/latest.json"
+          cp "$LATEST_JSON_TEMP" "$LATEST_JSON_FILE"
+          
           # Upload latest.json to release (clobber to overwrite with merged version)
           echo "Uploading merged latest.json to release..."
-          if ! gh release upload "$RELEASE_TAG" "$LATEST_JSON_TEMP" --clobber; then
+          if ! gh release upload "$RELEASE_TAG" "$LATEST_JSON_FILE" --clobber; then
             echo "Error: Failed to upload latest.json"
-            rm -f "$LATEST_JSON_TEMP"
+            rm -f "$LATEST_JSON_TEMP" "$LATEST_JSON_FILE"
             exit 1
           fi
           
-          rm -f "$LATEST_JSON_TEMP"
+          rm -f "$LATEST_JSON_TEMP" "$LATEST_JSON_FILE"
           echo "Successfully uploaded merged latest.json to release"
 
