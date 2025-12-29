@@ -39,19 +39,21 @@ export function UpdateBanner() {
       console.error("[Updater] Failed to check updates", error);
       if (!silent) {
         const errorStr = error instanceof Error ? error.message : String(error || "");
+        const errorFull = error instanceof Error ? error.toString() : String(error || "");
         console.error("[Updater] Error details:", errorStr);
+        console.error("[Updater] Full error:", errorFull);
         if (errorStr.includes("404") || errorStr.includes("Not Found") || errorStr.includes("latest.json")) {
           setStatus("error");
           setMessage(`Update check failed: latest.json not found. Error: ${errorStr.substring(0, 100)}`);
-        } else if (errorStr.includes("network") || errorStr.includes("fetch")) {
+        } else if (errorStr.includes("network") || errorStr.includes("fetch") || errorStr.includes("Failed to fetch")) {
           setStatus("error");
           setMessage("Network error: Unable to reach update server. Check your internet connection.");
-        } else if (errorStr.includes("signature") || errorStr.includes("pubkey") || errorStr.includes("key")) {
+        } else if (errorStr.includes("signature") || errorStr.includes("pubkey") || errorStr.includes("key") || errorStr.includes("verification") || errorStr.includes("signing")) {
           setStatus("error");
-          setMessage("Signature verification failed. Please download updates manually from GitHub.");
+          setMessage(`Signature verification failed. Your app version may be too old. Please download v1.1.2 manually from GitHub. Error: ${errorStr.substring(0, 120)}`);
         } else {
           setStatus("error");
-          setMessage(`Unable to check for updates: ${errorStr.substring(0, 80)}`);
+          setMessage(`Unable to check for updates: ${errorStr.substring(0, 150)}`);
         }
       }
     }
