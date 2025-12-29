@@ -298,16 +298,18 @@ jobs:
           LATEST_JSON_TEMP=$(mktemp)
           RELEASE_TAG="${{ github.event.inputs.tag || github.ref_name }}"
           
+          # Write signature to temp file to safely pass it to Node.js (signature is already base64)
+          SIGNATURE_TEMP=$(mktemp)
+          echo -n "$SIGNATURE" > "$SIGNATURE_TEMP"
+          
           if gh release view "$RELEASE_TAG" --json assets --jq '.assets[] | select(.name == "latest.json") | .url' 2>/dev/null | head -1 | xargs curl -sL -f -o "$LATEST_JSON_TEMP" 2>/dev/null; then
             echo "Found existing latest.json, merging platform entry..."
             # Merge the new platform entry into existing JSON
-            # Use base64 encoding to safely pass signature through shell
-            SIGNATURE_B64=$(echo -n "$SIGNATURE" | base64)
             node -e "
               const fs = require('fs');
               const data = JSON.parse(fs.readFileSync('$LATEST_JSON_TEMP', 'utf8'));
               if (!data.platforms) data.platforms = {};
-              const signature = Buffer.from('$SIGNATURE_B64', 'base64').toString('utf8');
+              const signature = fs.readFileSync('$SIGNATURE_TEMP', 'utf8');
               data.platforms['$PLATFORM_KEY'] = {
                 signature: signature,
                 url: '$RELEASE_URL'
@@ -319,11 +321,9 @@ jobs:
           else
             echo "No existing latest.json found, creating new one..."
             # Create new latest.json with this platform
-            # Use base64 encoding to safely pass signature through shell
-            SIGNATURE_B64=$(echo -n "$SIGNATURE" | base64)
             node -e "
               const fs = require('fs');
-              const signature = Buffer.from('$SIGNATURE_B64', 'base64').toString('utf8');
+              const signature = fs.readFileSync('$SIGNATURE_TEMP', 'utf8');
               const data = {
                 version: '$VERSION',
                 notes: 'See the assets to download this version and install.',
@@ -338,6 +338,9 @@ jobs:
               fs.writeFileSync('$LATEST_JSON_TEMP', JSON.stringify(data, null, 2));
             "
           fi
+          
+          # Clean up signature temp file
+          rm -f "$SIGNATURE_TEMP"
           
           # Verify JSON is valid
           if ! node -e "JSON.parse(require('fs').readFileSync('$LATEST_JSON_TEMP', 'utf8'))" 2>/dev/null; then
