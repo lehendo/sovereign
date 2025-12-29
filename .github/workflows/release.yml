@@ -169,10 +169,10 @@ jobs:
             # Sign the artifact ourselves
             # Write private key to a temporary file (preserve newlines and special characters)
             PRIVATE_KEY_FILE=$(mktemp)
-            # Use a heredoc to preserve the exact key format including newlines
-            cat > "$PRIVATE_KEY_FILE" << 'KEYEOF'
-${{ secrets.TAURI_PRIVATE_KEY }}
-KEYEOF
+            # Store the key in a variable first, then write it preserving all characters
+            PRIVATE_KEY_CONTENT="${{ secrets.TAURI_PRIVATE_KEY }}"
+            # Use printf with %b to interpret escape sequences, or just write directly
+            printf '%s' "$PRIVATE_KEY_CONTENT" > "$PRIVATE_KEY_FILE"
             
             # Verify the key file was written correctly
             if [ ! -s "$PRIVATE_KEY_FILE" ]; then
@@ -187,6 +187,8 @@ KEYEOF
               --password "$TAURI_KEY_PASSWORD" 2>&1 || {
               echo "Error: tauri signer failed"
               echo "Debug: Key file size: $(wc -c < "$PRIVATE_KEY_FILE") bytes"
+              echo "Debug: First 100 chars of key file:"
+              head -c 100 "$PRIVATE_KEY_FILE" || true
               rm -f "$PRIVATE_KEY_FILE"
               exit 1
             }
