@@ -286,36 +286,78 @@ jobs:
           echo "  Release URL: $RELEASE_URL"
           echo "  Signature length: ${#SIGNATURE} characters"
           
-          # Create latest.json
-          LATEST_JSON="${ARTIFACT_DIR}/latest.json"
+          # Create platform-specific JSON entry
+          PLATFORM_KEY="${PLATFORM}-${ARCH}"
           PUB_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           
-          # Use printf to avoid YAML heredoc issues
-          # Format matches Tauri updater spec exactly
-          printf '{\n  "version": "%s",\n  "notes": "See the assets to download this version and install.",\n  "pub_date": "%s",\n  "platforms": {\n    "%s-%s": {\n      "signature": "%s",\n      "url": "%s"\n    }\n  }\n}' "$VERSION" "$PUB_DATE" "$PLATFORM" "$ARCH" "$SIGNATURE" "$RELEASE_URL" > "$LATEST_JSON"
+          echo "Platform entry for $PLATFORM_KEY:"
+          echo "  Signature: ${SIGNATURE:0:50}..."
+          echo "  URL: $RELEASE_URL"
           
-          # Verify latest.json was created and is valid JSON
-          if [ ! -f "$LATEST_JSON" ]; then
-            echo "Error: latest.json was not created"
+          # Download existing latest.json if it exists, or create new one
+          LATEST_JSON_TEMP=$(mktemp)
+          RELEASE_TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          
+          if gh release view "$RELEASE_TAG" --json assets --jq '.assets[] | select(.name == "latest.json") | .url' 2>/dev/null | head -1 | xargs curl -sL -f -o "$LATEST_JSON_TEMP" 2>/dev/null; then
+            echo "Found existing latest.json, merging platform entry..."
+            # Merge the new platform entry into existing JSON
+            # Use base64 encoding to safely pass signature through shell
+            SIGNATURE_B64=$(echo -n "$SIGNATURE" | base64)
+            node -e "
+              const fs = require('fs');
+              const data = JSON.parse(fs.readFileSync('$LATEST_JSON_TEMP', 'utf8'));
+              if (!data.platforms) data.platforms = {};
+              const signature = Buffer.from('$SIGNATURE_B64', 'base64').toString('utf8');
+              data.platforms['$PLATFORM_KEY'] = {
+                signature: signature,
+                url: '$RELEASE_URL'
+              };
+              // Update pub_date to most recent
+              data.pub_date = '$PUB_DATE';
+              fs.writeFileSync('$LATEST_JSON_TEMP', JSON.stringify(data, null, 2));
+            "
+          else
+            echo "No existing latest.json found, creating new one..."
+            # Create new latest.json with this platform
+            # Use base64 encoding to safely pass signature through shell
+            SIGNATURE_B64=$(echo -n "$SIGNATURE" | base64)
+            node -e "
+              const fs = require('fs');
+              const signature = Buffer.from('$SIGNATURE_B64', 'base64').toString('utf8');
+              const data = {
+                version: '$VERSION',
+                notes: 'See the assets to download this version and install.',
+                pub_date: '$PUB_DATE',
+                platforms: {
+                  '$PLATFORM_KEY': {
+                    signature: signature,
+                    url: '$RELEASE_URL'
+                  }
+                }
+              };
+              fs.writeFileSync('$LATEST_JSON_TEMP', JSON.stringify(data, null, 2));
+            "
+          fi
+          
+          # Verify JSON is valid
+          if ! node -e "JSON.parse(require('fs').readFileSync('$LATEST_JSON_TEMP', 'utf8'))" 2>/dev/null; then
+            echo "Error: Merged latest.json is not valid JSON"
+            cat "$LATEST_JSON_TEMP"
+            rm -f "$LATEST_JSON_TEMP"
             exit 1
           fi
           
-          # Validate JSON syntax
-          if ! node -e "JSON.parse(require('fs').readFileSync('$LATEST_JSON', 'utf8'))" 2>/dev/null; then
-            echo "Error: latest.json is not valid JSON"
-            cat "$LATEST_JSON"
-            exit 1
-          fi
+          echo "Merged latest.json:"
+          cat "$LATEST_JSON_TEMP"
           
-          echo "Generated latest.json:"
-          cat "$LATEST_JSON"
-          
-          # Upload latest.json to release
-          echo "Uploading latest.json to release..."
-          if ! gh release upload "${{ github.event.inputs.tag || github.ref_name }}" "$LATEST_JSON" --clobber; then
+          # Upload latest.json to release (clobber to overwrite with merged version)
+          echo "Uploading merged latest.json to release..."
+          if ! gh release upload "$RELEASE_TAG" "$LATEST_JSON_TEMP" --clobber; then
             echo "Error: Failed to upload latest.json"
+            rm -f "$LATEST_JSON_TEMP"
             exit 1
           fi
           
-          echo "Successfully uploaded latest.json to release"
+          rm -f "$LATEST_JSON_TEMP"
+          echo "Successfully uploaded merged latest.json to release"
 
