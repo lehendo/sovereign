@@ -299,31 +299,136 @@ jobs:
           RELEASE_TAG="${{ github.event.inputs.tag || github.ref_name }}"
           
           # Write signature to temp file to safely pass it to Node.js (signature is already base64)
-          SIGNATURE_TEMP=$(mktemp)
+          # Use artifact directory instead of system temp for better cross-platform compatibility
+          SIGNATURE_TEMP="${ARTIFACT_DIR}/.signature_temp_$$"
           echo -n "$SIGNATURE" > "$SIGNATURE_TEMP"
           
-          if gh release view "$RELEASE_TAG" --json assets --jq '.assets[] | select(.name == "latest.json") | .url' 2>/dev/null | head -1 | xargs curl -sL -f -o "$LATEST_JSON_TEMP" 2>/dev/null; then
-            echo "Found existing latest.json, merging platform entry..."
-            # Merge the new platform entry into existing JSON
-            node -e "
-              const fs = require('fs');
-              const data = JSON.parse(fs.readFileSync('$LATEST_JSON_TEMP', 'utf8'));
-              if (!data.platforms) data.platforms = {};
-              const signature = fs.readFileSync('$SIGNATURE_TEMP', 'utf8');
-              data.platforms['$PLATFORM_KEY'] = {
-                signature: signature,
-                url: '$RELEASE_URL'
-              };
-              // Update pub_date to most recent
-              data.pub_date = '$PUB_DATE';
-              fs.writeFileSync('$LATEST_JSON_TEMP', JSON.stringify(data, null, 2));
-            "
+          # Verify signature file was written
+          if [ ! -f "$SIGNATURE_TEMP" ] || [ ! -s "$SIGNATURE_TEMP" ]; then
+            echo "Error: Signature temp file not created or is empty"
+            echo "Attempted path: $SIGNATURE_TEMP"
+            ls -la "$ARTIFACT_DIR" || true
+            exit 1
+          fi
+          
+          echo "Signature temp file created: $SIGNATURE_TEMP ($(wc -c < "$SIGNATURE_TEMP") bytes)"
+          
+          # Try to download existing latest.json
+          LATEST_JSON_URL=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[] | select(.name == "latest.json") | .url' 2>/dev/null | head -1)
+          
+          if [ -n "$LATEST_JSON_URL" ]; then
+            echo "Found latest.json URL: $LATEST_JSON_URL"
+            # Download with retry and verify it's valid JSON
+            if curl -sL -f -o "$LATEST_JSON_TEMP" "$LATEST_JSON_URL" 2>/dev/null && [ -s "$LATEST_JSON_TEMP" ]; then
+              # Verify it's valid JSON before using it
+              if node -e "JSON.parse(require('fs').readFileSync('$LATEST_JSON_TEMP', 'utf8'))" 2>/dev/null; then
+                echo "Found existing latest.json, merging platform entry..."
+                # Merge the new platform entry into existing JSON
+                node -e "
+                  const fs = require('fs');
+                  const path = require('path');
+                  if (!fs.existsSync('$SIGNATURE_TEMP')) {
+                    console.error('Error: Signature temp file does not exist: $SIGNATURE_TEMP');
+                    process.exit(1);
+                  }
+                  const data = JSON.parse(fs.readFileSync('$LATEST_JSON_TEMP', 'utf8'));
+                  if (!data.platforms) data.platforms = {};
+                  const signature = fs.readFileSync('$SIGNATURE_TEMP', 'utf8');
+                  if (!signature || signature.length === 0) {
+                    console.error('Error: Signature is empty');
+                    process.exit(1);
+                  }
+                  data.platforms['$PLATFORM_KEY'] = {
+                    signature: signature,
+                    url: '$RELEASE_URL'
+                  };
+                  // Update pub_date to most recent
+                  data.pub_date = '$PUB_DATE';
+                  fs.writeFileSync('$LATEST_JSON_TEMP', JSON.stringify(data, null, 2));
+                " || {
+                  echo "Error: Failed to merge platform entry"
+                  exit 1
+                }
+              else
+                echo "Downloaded latest.json is invalid JSON, creating new one..."
+                rm -f "$LATEST_JSON_TEMP"
+                LATEST_JSON_TEMP=$(mktemp)
+                # Create new latest.json with this platform
+                node -e "
+                  const fs = require('fs');
+                  if (!fs.existsSync('$SIGNATURE_TEMP')) {
+                    console.error('Error: Signature temp file does not exist: $SIGNATURE_TEMP');
+                    process.exit(1);
+                  }
+                  const signature = fs.readFileSync('$SIGNATURE_TEMP', 'utf8');
+                  if (!signature || signature.length === 0) {
+                    console.error('Error: Signature is empty');
+                    process.exit(1);
+                  }
+                  const data = {
+                    version: '$VERSION',
+                    notes: 'See the assets to download this version and install.',
+                    pub_date: '$PUB_DATE',
+                    platforms: {
+                      '$PLATFORM_KEY': {
+                        signature: signature,
+                        url: '$RELEASE_URL'
+                      }
+                    }
+                  };
+                  fs.writeFileSync('$LATEST_JSON_TEMP', JSON.stringify(data, null, 2));
+                " || {
+                  echo "Error: Failed to create latest.json"
+                  exit 1
+                }
+              fi
+            else
+              echo "Failed to download existing latest.json, creating new one..."
+              rm -f "$LATEST_JSON_TEMP"
+              LATEST_JSON_TEMP=$(mktemp)
+              # Create new latest.json with this platform
+              node -e "
+                const fs = require('fs');
+                if (!fs.existsSync('$SIGNATURE_TEMP')) {
+                  console.error('Error: Signature temp file does not exist: $SIGNATURE_TEMP');
+                  process.exit(1);
+                }
+                const signature = fs.readFileSync('$SIGNATURE_TEMP', 'utf8');
+                if (!signature || signature.length === 0) {
+                  console.error('Error: Signature is empty');
+                  process.exit(1);
+                }
+                const data = {
+                  version: '$VERSION',
+                  notes: 'See the assets to download this version and install.',
+                  pub_date: '$PUB_DATE',
+                  platforms: {
+                    '$PLATFORM_KEY': {
+                      signature: signature,
+                      url: '$RELEASE_URL'
+                    }
+                  }
+                };
+                fs.writeFileSync('$LATEST_JSON_TEMP', JSON.stringify(data, null, 2));
+              " || {
+                echo "Error: Failed to create latest.json"
+                exit 1
+              }
+            fi
           else
             echo "No existing latest.json found, creating new one..."
             # Create new latest.json with this platform
             node -e "
               const fs = require('fs');
+              if (!fs.existsSync('$SIGNATURE_TEMP')) {
+                console.error('Error: Signature temp file does not exist: $SIGNATURE_TEMP');
+                process.exit(1);
+              }
               const signature = fs.readFileSync('$SIGNATURE_TEMP', 'utf8');
+              if (!signature || signature.length === 0) {
+                console.error('Error: Signature is empty');
+                process.exit(1);
+              }
               const data = {
                 version: '$VERSION',
                 notes: 'See the assets to download this version and install.',
@@ -336,11 +441,16 @@ jobs:
                 }
               };
               fs.writeFileSync('$LATEST_JSON_TEMP', JSON.stringify(data, null, 2));
-            "
+            " || {
+              echo "Error: Failed to create latest.json"
+              exit 1
+            }
           fi
           
-          # Clean up signature temp file
-          rm -f "$SIGNATURE_TEMP"
+          # Clean up signature temp file after Node.js is done (ensure it exists first)
+          if [ -f "$SIGNATURE_TEMP" ]; then
+            rm -f "$SIGNATURE_TEMP"
+          fi
           
           # Verify JSON is valid
           if ! node -e "JSON.parse(require('fs').readFileSync('$LATEST_JSON_TEMP', 'utf8'))" 2>/dev/null; then
