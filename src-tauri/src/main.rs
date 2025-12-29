@@ -142,13 +142,101 @@ fn setup_tesseract(app_handle: &tauri::AppHandle) -> Result<(), Box<dyn std::err
     
     #[cfg(not(target_os = "windows"))]
     {
-        match check_tesseract_installed() {
-            Ok(_) => {
-                println!("Tesseract OCR check passed");
+        // Find Tesseract installation path
+        let tesseract_path = {
+            #[cfg(target_os = "macos")]
+            {
+                let homebrew_paths = vec![
+                    "/opt/homebrew/bin/tesseract",  // Apple Silicon Homebrew
+                    "/usr/local/bin/tesseract",      // Intel Homebrew
+                    "/opt/homebrew/opt/tesseract/bin/tesseract",  // Alternative Homebrew location
+                ];
+                
+                let mut found_path = None;
+                for path in homebrew_paths {
+                    if std::path::Path::new(path).exists() {
+                        if let Ok(result) = Command::new(path).arg("--version").output() {
+                            if result.status.success() {
+                                // Extract directory from full path
+                                if let Some(parent) = std::path::Path::new(path).parent() {
+                                    found_path = Some(parent.to_path_buf());
+                                    let version = String::from_utf8_lossy(&result.stdout);
+                                    println!("Tesseract found at {}: {}", path, version.lines().next().unwrap_or("unknown"));
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                found_path
             }
-            Err(e) => {
-                eprintln!("Tesseract OCR check failed: {}", e);
-                show_tesseract_error_dialog();
+            #[cfg(not(target_os = "macos"))]
+            {
+                // For Linux, check PATH
+                if let Ok(output) = Command::new("which").arg("tesseract").output() {
+                    if output.status.success() {
+                        let path_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                        if let Some(parent) = std::path::Path::new(&path_str).parent() {
+                            Some(parent.to_path_buf())
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            }
+        };
+        
+        match tesseract_path {
+            Some(tesseract_bin_dir) => {
+                // Add Tesseract directory to PATH for this process
+                // This ensures rusty-tesseract can find Tesseract at runtime
+                let current_path = env::var("PATH").unwrap_or_default();
+                let new_path = if cfg!(target_os = "macos") {
+                    format!("{}:{}", tesseract_bin_dir.display(), current_path)
+                } else {
+                    format!("{}:{}", tesseract_bin_dir.display(), current_path)
+                };
+                env::set_var("PATH", &new_path);
+                println!("Added Tesseract to PATH: {}", tesseract_bin_dir.display());
+                
+                // Also set TESSDATA_PREFIX if tessdata directory exists
+                let tessdata_paths = vec![
+                    tesseract_bin_dir.parent().map(|p| p.join("share").join("tessdata")),
+                    tesseract_bin_dir.parent().map(|p| p.join("lib").join("tessdata")),
+                    #[cfg(target_os = "macos")]
+                    Some(std::path::PathBuf::from("/opt/homebrew/share/tessdata")),
+                    #[cfg(target_os = "macos")]
+                    Some(std::path::PathBuf::from("/usr/local/share/tessdata")),
+                ];
+                
+                for tessdata_dir in tessdata_paths.into_iter().flatten() {
+                    if tessdata_dir.exists() {
+                        if let Some(tessdata_str) = tessdata_dir.to_str() {
+                            env::set_var("TESSDATA_PREFIX", tessdata_str);
+                            println!("Set TESSDATA_PREFIX to: {}", tessdata_dir.display());
+                            break;
+                        }
+                    }
+                }
+                
+                println!("Tesseract OCR setup complete");
+            }
+            None => {
+                // Fallback: Check if tesseract is in PATH
+                match Command::new("tesseract").arg("--version").output() {
+                    Ok(result) if result.status.success() => {
+                        let version = String::from_utf8_lossy(&result.stdout);
+                        println!("Tesseract found in PATH: {}", version.lines().next().unwrap_or("unknown"));
+                    }
+                    _ => {
+                        eprintln!("Tesseract OCR check failed: Tesseract not found");
+                        show_tesseract_error_dialog();
+                    }
+                }
             }
         }
     }
