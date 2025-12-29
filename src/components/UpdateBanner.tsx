@@ -68,8 +68,23 @@ export function UpdateBanner() {
       await availableUpdate.downloadAndInstall(handleDownloadEvent);
     } catch (error) {
       console.error("[Updater] Failed to install update", error);
+      const errorStr = error instanceof Error ? error.message : String(error || "");
+      const errorFull = error instanceof Error ? error.toString() : String(error || "");
+      console.error("[Updater] Install error details:", errorStr);
+      console.error("[Updater] Full install error:", errorFull);
+      
       setStatus("error");
-      setMessage("Auto-update failed. Please download the latest release manually.");
+      
+      // Provide more specific error messages
+      if (errorStr.includes("permission") || errorStr.includes("denied") || errorStr.includes("access")) {
+        setMessage(`Update installation failed: Permission denied. Please download v${availableUpdate.version} manually from GitHub.`);
+      } else if (errorStr.includes("network") || errorStr.includes("fetch") || errorStr.includes("download")) {
+        setMessage(`Update download failed: Network error. Please check your internet connection and try again, or download manually.`);
+      } else if (errorStr.includes("signature") || errorStr.includes("verify")) {
+        setMessage(`Update verification failed: Signature error. Please download v${availableUpdate.version} manually from GitHub.`);
+      } else {
+        setMessage(`Auto-update failed: ${errorStr.substring(0, 100)}. Please download v${availableUpdate.version} manually from GitHub.`);
+      }
     }
   };
 
