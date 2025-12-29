@@ -78,7 +78,7 @@ See [SECURITY.md](SECURITY.md) for detailed security considerations.
 
 ## How It Works
 
-1. **Smart Capture** - Takes a screenshot every 40-50 seconds, but only saves when the screen changes
+1. **Smart Capture** - Takes a screenshot every 30 seconds, but only saves when the screen changes
 2. **Multi-Monitor** - Automatically detects and captures all connected displays
 3. **Text Extraction** - Uses Tesseract OCR to extract all visible text
 4. **Semantic Indexing** - Generates AI embeddings for natural language search (optional)
