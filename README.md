@@ -17,8 +17,9 @@ A privacy-first, local-only alternative to Microsoft Recall. Search everything y
 
 ## Demo
 
-<!-- TODO: Add demo video/GIF here -->
-<!-- Example: ![Demo](demo.gif) or [![Watch Demo](https://img.youtube.com/vi/VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=VIDEO_ID) -->
+https://github.com/user-attachments/assets/sovereigndemo.mp4
+
+**[Watch on GitHub Pages →](https://lehendo.github.io/sovereign/)**
 
 ## Why Sovereign?
 
@@ -39,7 +40,7 @@ A privacy-first, local-only alternative to Microsoft Recall. Search everything y
 - **High Performance** - Written in Rust, uses <1% CPU, minimal battery drain
 - **Semantic Search** - Find anything you've seen using natural language
 - **Smart Deduplication** - Only saves when your screen actually changes
-- **Auto-Updates** - Built-in updater keeps you secure
+- **Easy Updates** - Download the latest version directly from GitHub releases
 - **Auto-Cleanup** - Automatically deletes data older than 14 days
 - **Multi-Monitor Support** - Captures all connected displays
 - **Modern UI** - Dark mode with Cmd+K/Ctrl+K search, timeline slider, full-screen viewer

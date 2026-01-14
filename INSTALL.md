@@ -137,16 +137,16 @@ All metadata, OCR text, and embeddings are stored in SQLite:
 - **Windows**: `%APPDATA%\com.sovereign.app\sovereign.db`
 - **Linux**: `~/.local/share/com.sovereign.app/sovereign.db`
 
-## Auto-Updates
+## Updates
 
-Sovereign includes built-in auto-update functionality:
+To update Sovereign to the latest version:
 
-- Click **"Check for Updates"** in the sidebar to manually check
-- When a new version is available, the app will download, verify, and install automatically
-- Updates are cryptographically signed for security
-- You'll be notified when updates are ready to install
+1. Visit the **[GitHub Releases](https://github.com/lehendo/sovereign/releases/latest)** page or the **[Landing Page](https://lehendo.github.io/sovereign/)**
+2. Download the latest installer for your platform
+3. Install the new version (it will replace your existing installation)
+4. Your data (screenshots and database) will be preserved
 
-**Note**: Auto-updates require `latest.json` to be present in GitHub releases. If you're building from source, you'll need to generate this file manually or disable auto-updates.
+**Note**: The app includes quick links to GitHub releases and the landing page in the sidebar for easy access to updates.
 
 ## Troubleshooting
 

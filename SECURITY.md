@@ -40,9 +40,9 @@ If you discover a security vulnerability, please report it by opening a [GitHub 
 
 ## Updates
 
-- Releases are cryptographically signed
 - Security patches are released promptly after discovery
-- Keep the app updated to the latest version
+- Keep the app updated to the latest version by checking [GitHub Releases](https://github.com/lehendo/sovereign/releases/latest)
+- Always download official releases from the GitHub repository
 
 ## License
 

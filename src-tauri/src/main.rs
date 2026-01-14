@@ -246,7 +246,8 @@ fn setup_tesseract(app_handle: &tauri::AppHandle) -> Result<(), Box<dyn std::err
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     tauri::Builder::default()
-        .plugin(tauri_plugin_updater::Builder::new().build())
+        // Auto-updater disabled - users should download manually from GitHub releases
+        // .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let app_handle = app.handle().clone();
             

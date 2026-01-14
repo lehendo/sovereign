@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Sovereign",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "identifier": "com.sovereign.app",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -65,13 +65,6 @@
     "withGlobalTauri": true
   },
   "plugins": {
-    "updater": {
-      "endpoints": [
-        "https://github.com/lehendo/sovereign/releases/latest/download/latest.json"
-      ],
-      "dialog": true,
-      "pubkey": "$TAURI_PUBLIC_KEY"
-    }
   }
 }
 

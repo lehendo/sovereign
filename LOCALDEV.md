@@ -49,26 +49,26 @@ sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file lib
 
 ### Step 1: Clone the Repository
 
-```bash
-git clone https://github.com/lehendo/sovereign.git
-cd sovereign
-```
+   ```bash
+   git clone https://github.com/lehendo/sovereign.git
+   cd sovereign
+   ```
 
 ### Step 2: Install Node.js Dependencies
 
-```bash
-npm install
-```
+   ```bash
+   npm install
+   ```
 
 ### Step 3: Install Rust Dependencies
 
 Rust dependencies will be installed automatically on first build, but you can also install them manually:
 
-```bash
-cd src-tauri
-cargo build
-cd ..
-```
+   ```bash
+   cd src-tauri
+   cargo build
+   cd ..
+   ```
 
 ### Step 4: (Optional) Enable Semantic Search
 
@@ -100,13 +100,13 @@ Invoke-WebRequest -Uri "https://huggingface.co/Qdrant/all-MiniLM-L6-v2-onnx/reso
 ## Running in Development
 
 **Start the development server:**
-```bash
-npm run tauri dev
-```
+   ```bash
+   npm run tauri dev
+   ```
 
-This will:
+   This will:
 - Start the Vite dev server for the frontend (http://localhost:1420)
-- Build and run the Tauri app
+   - Build and run the Tauri app
 - Enable hot-reload for frontend changes (Rust changes require app restart)
 
 The app window will open automatically once the build completes.
@@ -126,8 +126,8 @@ npm run tauri:build:windows      # Windows (x64)
 ```
 
 **Build for current platform:**
-```bash
-npm run tauri build
+   ```bash
+   npm run tauri build
 ```
 
 **Build for specific platforms:**

@@ -30,6 +30,10 @@ dist-ssr
 .tauri
 *.tauri.key
 
+# Tesseract Windows bundle (created by setup script, keep folder structure)
+src-tauri/resources/tesseract-win/*
+!src-tauri/resources/tesseract-win/.gitkeep
+
 # Environment variables
 .env
 .env.local
@@ -38,3 +42,5 @@ dist-ssr
 .DS_Store
 Thumbs.db
 
+# Demo video (workspace root only - docs version is committed for GitHub Pages)
+/sovereigndemo.mp4
