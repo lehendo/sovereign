@@ -24,7 +24,8 @@ A privacy-first, local-only alternative to Microsoft Recall. Search everything y
 4. GitHub will auto-upload and generate the proper video embed code
 -->
 
-[Watch Demo Video](https://lehendo.github.io/sovereign/)
+
+https://github.com/user-attachments/assets/09d26adc-23b4-497f-87a5-a3178b25ad6b
 
 ## Why Sovereign?
 
