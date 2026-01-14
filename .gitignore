@@ -41,6 +41,3 @@ src-tauri/resources/tesseract-win/*
 # OS files
 .DS_Store
 Thumbs.db
-
-# Demo video (workspace root only - docs version is committed for GitHub Pages)
-/sovereigndemo.mp4
