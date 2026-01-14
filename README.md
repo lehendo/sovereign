@@ -17,9 +17,14 @@ A privacy-first, local-only alternative to Microsoft Recall. Search everything y
 
 ## Demo
 
-https://github.com/user-attachments/assets/sovereigndemo.mp4
+<!-- To make the video show inline on GitHub:
+1. Go to GitHub and edit this README.md
+2. Delete the placeholder line below
+3. Drag and drop sovereigndemo.mp4 directly into the editor at this location
+4. GitHub will auto-upload and generate the proper video embed code
+-->
 
-**[Watch on GitHub Pages →](https://lehendo.github.io/sovereign/)**
+[Watch Demo Video](https://lehendo.github.io/sovereign/)
 
 ## Why Sovereign?
 
