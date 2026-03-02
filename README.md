@@ -102,11 +102,3 @@ Before contributing, please:
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
-
----
-
-<div align="center">
-
-Made with ❤️ for privacy-conscious users
-
-</div>
